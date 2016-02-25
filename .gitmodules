@@ -1,0 +1,6 @@
+[submodule "drawlib"]
+	path = drawlib
+	url = https://github.com/TimSC/drawlib.git
+[submodule "cppo5m"]
+	path = cppo5m
+	url = https://github.com/TimSC/cppo5m.git
