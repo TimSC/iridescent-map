@@ -1,0 +1,26 @@
+
+Renderer API              CppSharp    native  Python   
+                              |---------|-------|    
+                                        |             
+
+
+                              Data source    Source definition
+                                     |              |
+                             Input selector --------|
+                                     |
+                              Tag preprocessor -- Preprocessor def
+                                          |
+                                     Regroup objects -- Style def
+                                       |          |
+   Style parser --Style def -- Way processor      Area/POI processor---- Style def
+                                       |           |
+									Map transform--|
+                                       |           |
+                                       |-----------|----Icon/Label engine
+                                       |           |
+Render engine                         Renderer ----|
+                                        |
+                          |-------------|-----------|----------|--------|
+Backends                Pango      OpenGL ES      Cairo      WebGL     SVG
+
+
