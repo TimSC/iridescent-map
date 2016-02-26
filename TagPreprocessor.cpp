@@ -88,5 +88,7 @@ void TagPreprocessor::FilterTags(TagMap &tags)
 			SetTagIfEmpty(tags, "vehicle", "designated");
 		}
 	}
+
+	//TODO Normalise true/false (and case variants) to yes/no 
 }
 
