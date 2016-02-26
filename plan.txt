@@ -23,4 +23,7 @@ Render engine                         Renderer ----|
                           |-------------|-----------|----------|--------|
 Backends                Pango      OpenGL ES      Cairo      WebGL     SVG
 
+See also: http://wiki.osgeo.org/wiki/OSGeo_Cartographic_Engine_Discussion
+
+Show labels based on their relative importance and up to a clutter limit (rather than static fixed approach?)
 
