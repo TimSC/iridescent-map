@@ -25,8 +25,10 @@ int main()
 	
 	regrouper.UpdateIdMappings();
 
-	IRegroupResultHandler handler;
-	regrouper.FindAreas(&handler);
+	FeatureStore featureStore;
+	regrouper.FindAreas(&featureStore);
+	regrouper.FindLines(&featureStore);
+	regrouper.FindPois(&featureStore);
 	
 }
 

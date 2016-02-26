@@ -2,7 +2,6 @@
 #include <iostream>
 using namespace std;
 
-
 IdLatLon::IdLatLon()
 {
 	lat = 0.0;
@@ -12,9 +11,7 @@ IdLatLon::IdLatLon()
 
 IdLatLon::IdLatLon(const IdLatLon &a)
 {
-	lat = a.lat;
-	lon = a.lon;
-	objId = a.objId;
+	*this = a;
 }
 
 IdLatLon::IdLatLon(double lat, double lon, int64_t objId) : lat(lat),
@@ -26,7 +23,147 @@ IdLatLon::IdLatLon(double lat, double lon, int64_t objId) : lat(lat),
 
 IdLatLon::~IdLatLon()
 {
+	
+}
 
+IdLatLon& IdLatLon::operator=(const IdLatLon &arg)
+{
+	lat = arg.lat;
+	lon = arg.lon;
+	objId = arg.objId;
+	return *this;
+}
+
+// ******************************
+
+FeatureArea::FeatureArea()
+{
+
+}
+
+FeatureArea::FeatureArea(const FeatureArea &a)
+{
+	*this = a;
+}
+
+FeatureArea::FeatureArea(const TagMap &tags,
+	const std::vector<IdLatLonList> &outerShapes, 
+	const std::vector<IdLatLonList> &innerShapes):
+	tags(tags),
+	outerShapes(outerShapes),
+	innerShapes(innerShapes)
+{
+	
+}
+
+FeatureArea::~FeatureArea()
+{
+
+}
+
+FeatureArea& FeatureArea::operator=(const FeatureArea &arg)
+{
+	tags = arg.tags;
+	outerShapes = arg.outerShapes;
+	innerShapes = arg.innerShapes;
+}
+
+FeatureLine::FeatureLine()
+{
+
+}
+
+FeatureLine::FeatureLine(const FeatureLine &a)
+{
+	*this = a;
+}
+
+FeatureLine::FeatureLine(const TagMap &tags, const IdLatLonList &shape):
+	tags(tags), shape(shape)
+{
+
+}
+
+FeatureLine::~FeatureLine()
+{
+
+}
+
+FeatureLine& FeatureLine::operator=(const FeatureLine &arg)
+{
+	tags = arg.tags;
+	shape = arg.shape;
+}
+
+FeaturePoi::FeaturePoi()
+{
+
+}
+
+FeaturePoi::FeaturePoi(const FeaturePoi &a)
+{
+	*this = a;
+}
+
+FeaturePoi::FeaturePoi(const TagMap &tags, double lat, double lon) :
+	tags(tags), lat(lat), lon(lon)
+{
+
+}
+
+FeaturePoi::~FeaturePoi()
+{
+
+}
+
+FeaturePoi& FeaturePoi::operator=(const FeaturePoi &arg)
+{
+	tags = arg.tags;
+	lat = arg.lat;
+	lon = arg.lon;
+}
+
+// ********************************
+
+FeatureStore::FeatureStore()
+{
+
+}
+
+FeatureStore::FeatureStore(const FeaturePoi &a)
+{
+	*this = a;
+}
+
+FeatureStore::~FeatureStore()
+{
+
+}
+
+FeatureStore& FeatureStore::operator=(const FeatureStore &arg)
+{
+	areas = arg.areas;
+	lines = arg.lines;
+	pois = arg.pois;
+}
+
+void FeatureStore::FoundArea(const TagMap &tags, 
+	const std::vector<IdLatLonList> &outerShapes, 
+	const std::vector<IdLatLonList> &innerShapes)
+{
+	this->areas.push_back(FeatureArea(tags, outerShapes, innerShapes));
+}
+
+void FeatureStore::FoundLine(const TagMap &tags, 
+	const IdLatLonList &shape)
+{
+	this->lines.push_back(FeatureLine(tags, shape));
+}
+
+void FeatureStore::FoundPoi(const TagMap &tags, 
+	double lat, double lon)
+{
+	this->pois.push_back(FeaturePoi(tags, lat, lon));
 }
 
 // ******************************
