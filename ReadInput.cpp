@@ -4,9 +4,9 @@
 #include "LayerDrawManager.h"
 #include <fstream>
 #include <iostream>
+#include "drawlib/drawlibcairo.h"
+#include "MapRender.h"
 using namespace std;
-
-
 
 int main()
 {
@@ -38,5 +38,23 @@ int main()
 	{
 		cout << *it << endl;
 	}
+
+	cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 640, 640);
+	class DrawLibCairoPango drawlib(surface);
+	
+	class MapRender mapRender(&drawlib);
+	class SlippyTilesTransform slippyTilesTransform;
+	
+	for(std::set<int>::iterator it = layerNums.begin(); it != layerNums.end(); it++)
+	{
+		int layerNum = *it;
+		cout << "Render layer: " << layerNum << endl;
+		mapRender.Render(layerNum, featureStore, slippyTilesTransform);
+	}
+
+	cairo_surface_write_to_png(surface, "image.png");	
+	cairo_surface_destroy(surface);
+	return 0;
+
 }
 
