@@ -11,6 +11,9 @@ Renderer API              CppSharp    native  Python
                               Tag preprocessor -- Preprocessor def
                                           |
                                      Regroup objects -- Style def
+                                          |
+	                                 Layer draw manager
+                                       |          |
                                        |          |
    Style parser --Style def -- Way processor      Area/POI processor---- Style def
                                        |           |

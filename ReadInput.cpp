@@ -1,6 +1,7 @@
 #include "cppo5m/OsmData.h"
 #include "TagPreprocessor.h"
 #include "Regrouper.h"
+#include "LayerDrawManager.h"
 #include <fstream>
 #include <iostream>
 using namespace std;
@@ -30,5 +31,12 @@ int main()
 	regrouper.FindLines(&featureStore);
 	regrouper.FindPois(&featureStore);
 	
+	class LayerDrawManager layerDrawManager;
+	std::set<int> layerNums = layerDrawManager.FindLayers(featureStore);
+
+	for(std::set<int>::iterator it = layerNums.begin(); it != layerNums.end(); it++)
+	{
+		cout << *it << endl;
+	}
 }
 
