@@ -3,16 +3,29 @@
 #include "cppo5m/OsmData.h"
 #include <map>
 
-typedef std::vector<std::pair<double, double> > LatLonList;
+class IdLatLon
+{
+public:
+	double lat;
+	double lon;
+	int64_t objId;
+
+	IdLatLon();
+	IdLatLon(const IdLatLon &a);
+	IdLatLon(double lat, double lon, int64_t objId);
+	virtual ~IdLatLon();
+};
+
+typedef std::vector<class IdLatLon> IdLatLonList;
 
 class IRegroupResultHandler
 {
 public:
 	virtual void FoundArea(const TagMap &tags, 
-		const std::vector<LatLonList> &outerShapes, 
-		const std::vector<LatLonList> &innerShapes) {};
+		const std::vector<IdLatLonList> &outerShapes, 
+		const std::vector<IdLatLonList> &innerShapes) {};
 	virtual void FoundLine(const TagMap &tags, 
-		const LatLonList &shape) {};
+		const IdLatLonList &shape) {};
 	virtual void FoundPoi(const TagMap &tags, 
 		double lat, double lon) {};
 };

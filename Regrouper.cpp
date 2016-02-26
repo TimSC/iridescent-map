@@ -3,6 +3,34 @@
 using namespace std;
 
 
+IdLatLon::IdLatLon()
+{
+	lat = 0.0;
+	lon = 0.0;
+	objId = 0;
+}
+
+IdLatLon::IdLatLon(const IdLatLon &a)
+{
+	lat = a.lat;
+	lon = a.lon;
+	objId = a.objId;
+}
+
+IdLatLon::IdLatLon(double lat, double lon, int64_t objId) : lat(lat),
+	lon(lon),
+	objId(objId)
+{
+	
+}
+
+IdLatLon::~IdLatLon()
+{
+
+}
+
+// ******************************
+
 Regrouper::Regrouper() : OsmData()
 {
 
@@ -46,7 +74,7 @@ void Regrouper::FindAreas(class IRegroupResultHandler *output)
 			continue;
 		//cout << relation.objId << endl;
 
-		std::vector<LatLonList> innerShapes, outerShapes;
+		std::vector<IdLatLonList> innerShapes, outerShapes;
 		for(size_t j=0; j < relation.refIds.size(); j++)
 		{
 			std::string &refType = relation.refTypeStrs[j];
@@ -57,7 +85,7 @@ void Regrouper::FindAreas(class IRegroupResultHandler *output)
 			
 			if(refType == "way")
 			{
-				LatLonList latLonList;
+				IdLatLonList latLonList;
 				class OsmWay *refWay = this->wayIdMap[refId];
 				if(refWay == NULL) continue;
 
@@ -67,7 +95,7 @@ void Regrouper::FindAreas(class IRegroupResultHandler *output)
 					class OsmNode *nd = this->nodeIdMap[wayNodes[k]];
 					if(nd == NULL) continue;
 					
-					latLonList.push_back(std::pair<double, double> (nd->lat, nd->lon));
+					latLonList.push_back(IdLatLon(nd->objId, nd->lat, nd->lon));
 				}
 				if(refRole == "inner") innerShapes.push_back(latLonList);
 				if(refRole == "outer") outerShapes.push_back(latLonList);
@@ -94,13 +122,13 @@ void Regrouper::FindAreas(class IRegroupResultHandler *output)
 		if(!isArea) continue;
 
 		//Get shape
-		std::vector<LatLonList> innerShapes, outerShapes;
-		LatLonList outerShape;
+		std::vector<IdLatLonList> innerShapes, outerShapes;
+		IdLatLonList outerShape;
 		for(size_t k =0; k < wayNodes.size(); k++)
 		{
 			class OsmNode *nd = this->nodeIdMap[wayNodes[k]];
 			if(nd == NULL) continue;
-			outerShape.push_back(std::pair<double, double> (nd->lat, nd->lon));
+			outerShape.push_back(IdLatLon(nd->objId, nd->lat, nd->lon));
 		}
 		outerShapes.push_back(outerShape);
 
@@ -121,12 +149,12 @@ void Regrouper::FindLines(class IRegroupResultHandler *output)
 		if(isArea) continue;
 
 		//Get shape
-		LatLonList shape;
+		IdLatLonList shape;
 		for(size_t k =0; k < wayNodes.size(); k++)
 		{
 			class OsmNode *nd = this->nodeIdMap[wayNodes[k]];
 			if(nd == NULL) continue;
-			shape.push_back(std::pair<double, double> (nd->lat, nd->lon));
+			shape.push_back(IdLatLon(nd->objId, nd->lat, nd->lon));
 		}
 
 		if(output != NULL)
