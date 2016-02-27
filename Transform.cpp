@@ -1,6 +1,19 @@
 
 #include <cmath>
 #include "Transform.h"
+#include <iostream>
+using namespace std;
+
+SlippyTilesTransform::SlippyTilesTransform(unsigned int zoom, unsigned int xtile, unsigned int ytile):
+	zoom(zoom), xtile(xtile), ytile(ytile)
+{
+
+}
+
+SlippyTilesTransform::~SlippyTilesTransform()
+{
+
+}
 
 double SlippyTilesTransform::Long2tilex(double lon, int z) 
 { 
@@ -21,5 +34,15 @@ double SlippyTilesTransform::Tiley2lat(int y, int z)
 {
 	double n = M_PI - 2.0 * M_PI * y / pow(2.0, z);
 	return 180.0 / M_PI * atan(0.5 * (exp(n) - exp(-n)));
+}
+
+void SlippyTilesTransform::LatLong2Screen(double lat, double lon, double &sxOut, double &syOut)
+{
+	double tx = Long2tilex(lon, this->zoom);
+	tx -= xtile;
+	double ty = Lat2tiley(lat, this->zoom);
+	ty -= ytile + 1;
+	sxOut = tx;
+	syOut = - ty;
 }
 

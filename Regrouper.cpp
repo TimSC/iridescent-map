@@ -232,7 +232,7 @@ void Regrouper::FindAreas(class IRegroupResultHandler *output)
 					class OsmNode *nd = this->nodeIdMap[wayNodes[k]];
 					if(nd == NULL) continue;
 					
-					latLonList.push_back(IdLatLon(nd->objId, nd->lat, nd->lon));
+					latLonList.push_back(IdLatLon(nd->lat, nd->lon, nd->objId));
 				}
 				if(refRole == "inner") innerShapes.push_back(latLonList);
 				if(refRole == "outer") outerShapes.push_back(latLonList);
@@ -265,7 +265,7 @@ void Regrouper::FindAreas(class IRegroupResultHandler *output)
 		{
 			class OsmNode *nd = this->nodeIdMap[wayNodes[k]];
 			if(nd == NULL) continue;
-			outerShape.push_back(IdLatLon(nd->objId, nd->lat, nd->lon));
+			outerShape.push_back(IdLatLon(nd->lat, nd->lon, nd->objId));
 		}
 		outerShapes.push_back(outerShape);
 
@@ -291,7 +291,7 @@ void Regrouper::FindLines(class IRegroupResultHandler *output)
 		{
 			class OsmNode *nd = this->nodeIdMap[wayNodes[k]];
 			if(nd == NULL) continue;
-			shape.push_back(IdLatLon(nd->objId, nd->lat, nd->lon));
+			shape.push_back(IdLatLon(nd->lat, nd->lon, nd->objId));
 		}
 
 		if(output != NULL)

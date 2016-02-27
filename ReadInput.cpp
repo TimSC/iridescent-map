@@ -12,6 +12,8 @@ int main()
 {
 	std::ifstream fi("1374.o5m");
 
+	class SlippyTilesTransform slippyTilesTransform(12, 2035, 1374);
+
 	class Regrouper regrouper;
 
 	class TagPreprocessor tagPreprocessor;
@@ -43,7 +45,6 @@ int main()
 	class DrawLibCairoPango drawlib(surface);
 	
 	class MapRender mapRender(&drawlib);
-	class SlippyTilesTransform slippyTilesTransform;
 	
 	for(std::set<int>::iterator it = layerNums.begin(); it != layerNums.end(); it++)
 	{
