@@ -63,22 +63,34 @@ void MapRender::Render(int layerNum, class FeatureStore &featureStore, class ITr
 
 	}	
 
-	for(size_t i=0;i<featureStore.pois.size();i++)
-	{
-		class FeaturePoi &poi = featureStore.pois[i];
-		double sx = 0.0, sy = 0.0;
-		//transform.LatLong2Screen(poi.lat, poi.lon, sx, sy);
-	}
-
 	for(size_t i=0;i<featureStore.lines.size();i++)
 	{
+		Contour line1;
+
 		class FeatureLine &line = featureStore.lines[i];
 		IdLatLonList &shape = line.shape;
 		for(size_t j=0;j<shape.size();j++)
 		{
-			
+			IdLatLon &pt = shape[j];
+			double sx = 0.0, sy = 0.0;
+			transform.LatLong2Screen(pt.lat, pt.lon, sx, sy);
+			double px = 0.0, py = 0.0;
+			this->ToDrawSpace(sx, sy, px, py);
+
+			line1.push_back(Point(px, py));			
 		}
+
+		class LineProperties lineProp1(double(rand()%100) / 100.0, double(rand()%100) / 100.0, double(rand()%100) / 100.0, 3.0);
+		Contours lines1;
+		lines1.push_back(line1);
+		output->AddDrawLinesCmd(lines1, lineProp1);
 	}	
+
+	for(size_t i=0;i<featureStore.pois.size();i++)
+	{
+		class FeaturePoi &poi = featureStore.pois[i];
+		double sx = 0.0, sy = 0.0;
+	}
 
 	output->Draw();
 }
