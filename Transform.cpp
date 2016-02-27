@@ -41,8 +41,8 @@ void SlippyTilesTransform::LatLong2Screen(double lat, double lon, double &sxOut,
 	double tx = Long2tilex(lon, this->zoom);
 	tx -= xtile;
 	double ty = Lat2tiley(lat, this->zoom);
-	ty -= ytile + 1;
+	ty -= ytile;
 	sxOut = tx;
-	syOut = - ty;
+	syOut = ty;
 }
 

@@ -1,5 +1,6 @@
 #include "MapRender.h"
 #include <iostream>
+#include <stdlib.h>
 using namespace std;
 
 MapRender::MapRender(class IDrawLib *output) : output(output)
@@ -15,10 +16,10 @@ MapRender::~MapRender()
 void MapRender::Render(int layerNum, class FeatureStore &featureStore, class ITransform &transform)
 {
 
-	std::vector<Polygon> polygons;
 
 	for(size_t i=0;i<featureStore.areas.size();i++)
 	{
+		std::vector<Polygon> polygons;
 		Contour outer;
 		Contours inners;
 
@@ -38,10 +39,11 @@ void MapRender::Render(int layerNum, class FeatureStore &featureStore, class ITr
 		}
 		Polygon polygon(outer, inners);
 		polygons.push_back(polygon);
-	}	
 
-	class ShapeProperties prop(1.0, 0.0, 0.0);
-	this->output->AddDrawPolygonsCmd(polygons, prop);
+		class ShapeProperties prop(double(rand()%100) / 100.0, double(rand()%100) / 100.0, double(rand()%100) / 100.0);
+		this->output->AddDrawPolygonsCmd(polygons, prop);
+
+	}	
 
 	for(size_t i=0;i<featureStore.pois.size();i++)
 	{
