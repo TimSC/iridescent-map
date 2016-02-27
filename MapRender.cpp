@@ -5,7 +5,19 @@ using namespace std;
 
 MapRender::MapRender(class IDrawLib *output) : output(output)
 {
-
+	extentx1 = 0.0;
+	extenty1 = 0.0;
+	extentx2 = 0.0;
+	extenty2 = 0.0;
+	int ret = output->GetDrawableExtents(extentx1,
+		extenty1,
+		extentx2,
+		extenty2);
+	if(ret != 0){
+		extentx1 = 0.0, extenty1 = 1.0, extentx2 = 0.0, extenty2 = 1.0;
+	}
+	width = extentx2 - extentx1;
+	height = extenty2 - extenty1;
 }
 
 MapRender::~MapRender()
@@ -13,10 +25,14 @@ MapRender::~MapRender()
 
 }
 
+void MapRender::ToDrawSpace(double nx, double ny, double &px, double &py)
+{
+	px = nx * width + extentx1;
+	py = ny * height + extenty1;
+}
+
 void MapRender::Render(int layerNum, class FeatureStore &featureStore, class ITransform &transform)
 {
-
-
 	for(size_t i=0;i<featureStore.areas.size();i++)
 	{
 		std::vector<Polygon> polygons;
@@ -34,7 +50,9 @@ void MapRender::Render(int layerNum, class FeatureStore &featureStore, class ITr
 				double sx = 0.0, sy = 0.0;
 				transform.LatLong2Screen(pt.lat, pt.lon, sx, sy);
 				//cout << sx << ","<< sy << endl;
-				outer.push_back(Point(sx*640.0, sy*640.0));
+				double px = 0.0, py = 0.0;
+				this->ToDrawSpace(sx, sy, px, py);
+				outer.push_back(Point(px, py));
 			}
 		}
 		Polygon polygon(outer, inners);

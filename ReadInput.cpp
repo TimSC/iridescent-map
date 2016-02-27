@@ -36,11 +36,6 @@ int main()
 	class LayerDrawManager layerDrawManager;
 	std::set<int> layerNums = layerDrawManager.FindLayers(featureStore);
 
-	for(std::set<int>::iterator it = layerNums.begin(); it != layerNums.end(); it++)
-	{
-		cout << *it << endl;
-	}
-
 	cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 640, 640);
 	class DrawLibCairoPango drawlib(surface);
 	
