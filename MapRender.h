@@ -4,6 +4,7 @@
 #include "drawlib/drawlib.h"
 #include "Regrouper.h"
 #include "Transform.h"
+#include "Style.h"
 
 class MapRender
 {
@@ -11,6 +12,7 @@ public:
 	class IDrawLib *output;
 	double extentx1, extenty1, extentx2, extenty2;
 	double width, height;
+	class Style style;
 
 	MapRender(class IDrawLib *output);
 	virtual ~MapRender();
