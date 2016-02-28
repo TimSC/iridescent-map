@@ -77,7 +77,8 @@ void MapRender::Render(int layerNum, int zoom, class FeatureStore &featureStore,
 		if(ln != layerNum) continue;
 
 		StyleAttributes styleAttributes;
-		style.GetStyle(zoom, line.tags, Style::Line, styleAttributes);
+		int recognisedStyle = style.GetStyle(zoom, line.tags, Style::Line, styleAttributes);
+		if(!recognisedStyle) continue;
 
 		IdLatLonList &shape = line.shape;
 		for(size_t j=0;j<shape.size();j++)

@@ -3,7 +3,7 @@
 #include <iostream>
 using namespace std;
 
-void Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, StyleAttributes &styleOut)
+int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, StyleAttributes &styleOut)
 {
 	styleOut.clear();
 
@@ -12,7 +12,9 @@ void Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Styl
 	if(it != tags.end())
 	{
 		styleOut["line-color"] = "#ededed";
+		return 1;
 	}
 
+	return 0;
 
 }

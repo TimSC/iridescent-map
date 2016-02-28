@@ -15,7 +15,7 @@ public:
 	};
 		
 
-	void GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, StyleAttributes &styleOut);
+	int GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, StyleAttributes &styleOut);
 
 };
 
