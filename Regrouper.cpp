@@ -182,7 +182,7 @@ bool Regrouper::DetectIfArea(const std::vector<int64_t> &wayNodes, const TagMap 
 {
 	//Closed ways are probably areas
 	bool isArea = false;
-	if(wayNodes.size() >=2 && wayNodes[0] == wayNodes[wayNodes.size()-1]);
+	if(wayNodes.size() >=2 && wayNodes[0] == wayNodes[wayNodes.size()-1])
 		isArea = true;
 	
 	//Highways are probably not areas
