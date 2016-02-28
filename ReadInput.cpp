@@ -45,7 +45,7 @@ int main()
 	{
 		int layerNum = *it;
 		cout << "Render layer: " << layerNum << endl;
-		mapRender.Render(layerNum, featureStore, slippyTilesTransform);
+		mapRender.Render(layerNum, 12, featureStore, slippyTilesTransform);
 	}
 
 	cairo_surface_write_to_png(surface, "image.png");	

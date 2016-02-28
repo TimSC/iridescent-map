@@ -8,7 +8,14 @@ typedef std::map<std::string, std::string> StyleAttributes;
 class Style
 {
 public:
-	void GetStyle(int zoom, TagMap &tags, StyleAttributes &styleOut);
+	enum FeatureType {
+		Poi,
+		Line,
+		Area
+	};
+		
+
+	void GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, StyleAttributes &styleOut);
 
 };
 
