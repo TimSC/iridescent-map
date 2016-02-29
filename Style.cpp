@@ -13,6 +13,8 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		StyleAttributes style;
 		style["line-color"] = "#ededed";
 		LayerDef layerDef;
+		layerDef.push_back(1);
+		layerDef.push_back(3);
 		styleDefOut.push_back(StyleAndLayerDef(layerDef, style));
 		return 1;
 	}
@@ -23,6 +25,8 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		StyleAttributes style;
 		style["fill-color"] = "#444444";
 		LayerDef layerDef;
+		layerDef.push_back(1);
+		layerDef.push_back(1);
 		styleDefOut.push_back(StyleAndLayerDef(layerDef, style));
 		return 1;
 	}

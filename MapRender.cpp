@@ -25,6 +25,13 @@ DrawTreeNode::~DrawTreeNode()
 
 void DrawTreeNode::WriteDrawCommands(class IDrawLib *output)
 {
+	
+	for(std::map<int, class DrawTreeNode>::iterator it = this->children.begin(); it != this->children.end(); it++)
+	{
+		class DrawTreeNode &child = it->second;
+		child.WriteDrawCommands(output);
+	}
+
 	for(size_t i=0;i < this->styledPolygons.size();i++)
 	{
 		StyledPolygons &sp = styledPolygons[i];
@@ -42,6 +49,18 @@ void DrawTreeNode::WriteDrawCommands(class IDrawLib *output)
 
 		output->AddDrawLinesCmd(lines, prop);
 	}
+}
+
+class DrawTreeNode *DrawTreeNode::GetLayer(LayerDef &layerDef, int depth)
+{
+	if(layerDef.size() <= depth) return this;
+	
+	int requestedAddr = layerDef[depth];
+	std::map<int, class DrawTreeNode>::iterator it = this->children.find(requestedAddr);
+	if(it == this->children.end())
+		this->children[requestedAddr] = DrawTreeNode();
+
+	return this->children[requestedAddr].GetLayer(layerDef, depth+1);
 }
 
 // **********************************************
@@ -123,9 +142,10 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransf
 				if(!colOk) continue;
 			}
 
-			drawTree.styledPolygons.push_back(StyledPolygons(polygons, prop));	
+			class DrawTreeNode *node = drawTree.GetLayer(layerDef);
+			node->styledPolygons.push_back(StyledPolygons(polygons, prop));	
 		}
-	}	
+	}
 
 	for(size_t i=0;i<featureStore.lines.size();i++)
 	{
@@ -165,7 +185,9 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransf
 		
 			Contours lines1;
 			lines1.push_back(line1);
-			drawTree.styledLines.push_back(StyledLines(lines1, lineProp1));
+
+			class DrawTreeNode *node = drawTree.GetLayer(layerDef);
+			node->styledLines.push_back(StyledLines(lines1, lineProp1));
 		}
 	}	
 
