@@ -1,7 +1,6 @@
 #include "cppo5m/OsmData.h"
 #include "TagPreprocessor.h"
 #include "Regrouper.h"
-#include "LayerDrawManager.h"
 #include <fstream>
 #include <iostream>
 #include "drawlib/drawlibcairo.h"
@@ -33,20 +32,12 @@ int main()
 	regrouper.FindLines(&featureStore);
 	regrouper.FindPois(&featureStore);
 	
-	class LayerDrawManager layerDrawManager;
-	std::set<int> layerNums = layerDrawManager.FindLayers(featureStore);
-
 	cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 640, 640);
 	class DrawLibCairoPango drawlib(surface);
 	
 	class MapRender mapRender(&drawlib);
 	
-	for(std::set<int>::iterator it = layerNums.begin(); it != layerNums.end(); it++)
-	{
-		int layerNum = *it;
-		cout << "Render layer: " << layerNum << endl;
-		mapRender.Render(layerNum, 12, featureStore, slippyTilesTransform);
-	}
+	mapRender.Render(12, featureStore, slippyTilesTransform);
 
 	cairo_surface_write_to_png(surface, "image.png");	
 	cairo_surface_destroy(surface);

@@ -3,15 +3,27 @@
 #include <iostream>
 using namespace std;
 
-int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, StyleAttributes &styleOut)
+int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, StyleDef &styleDefOut)
 {
-	styleOut.clear();
+
 
 	TagMap::const_iterator it = tags.find("highway");
-
 	if(it != tags.end())
 	{
-		styleOut["line-color"] = "#ededed";
+		StyleAttributes style;
+		style["line-color"] = "#ededed";
+		LayerDef layerDef;
+		styleDefOut.push_back(StyleAndLayerDef(layerDef, style));
+		return 1;
+	}
+
+	it = tags.find("landuse");
+	if(it != tags.end())
+	{
+		StyleAttributes style;
+		style["fill-color"] = "#444444";
+		LayerDef layerDef;
+		styleDefOut.push_back(StyleAndLayerDef(layerDef, style));
 		return 1;
 	}
 

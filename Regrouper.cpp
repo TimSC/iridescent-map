@@ -186,16 +186,20 @@ bool Regrouper::DetectIfArea(const std::vector<int64_t> &wayNodes, const TagMap 
 		isArea = true;
 	
 	//Highways are probably not areas
-	TagMap::const_iterator highwayTag = tags.find("highway");
-	if(highwayTag != tags.end())
+	TagMap::const_iterator chkTag = tags.find("highway");
+	if(chkTag != tags.end())
 		isArea = false;
+
+	chkTag = tags.find("landuse");
+	if(chkTag != tags.end())
+		isArea = true;
 
 	//Manually overridden areas should follow tags
 	TagMap::const_iterator typeTag = tags.find("area");
 	if(typeTag != tags.end())
 	{ 
-		if(typeTag->second != "yes") isArea = true;
-		if(typeTag->second != "no") isArea = false;
+		if(typeTag->second == "yes") isArea = true;
+		if(typeTag->second == "no") isArea = false;
 	}
 	return isArea;
 }

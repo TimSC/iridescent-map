@@ -5,6 +5,47 @@
 #include <stdio.h>
 using namespace std;
 
+DrawTreeNode::DrawTreeNode()
+{
+
+}
+
+DrawTreeNode::DrawTreeNode(const class DrawTreeNode &a)
+{
+	styledPolygons = a.styledPolygons;
+	styledLines = a.styledLines;
+	styledText = a.styledText;
+	children = a.children;
+}
+
+DrawTreeNode::~DrawTreeNode()
+{
+
+}
+
+void DrawTreeNode::WriteDrawCommands(class IDrawLib *output)
+{
+	for(size_t i=0;i < this->styledPolygons.size();i++)
+	{
+		StyledPolygons &sp = styledPolygons[i];
+		std::vector<Polygon> &polys = sp.first;
+		class ShapeProperties &prop = sp.second;
+
+		output->AddDrawPolygonsCmd(polys, prop);
+	}
+
+	for(size_t i=0;i < this->styledLines.size();i++)
+	{
+		StyledLines &sl = styledLines[i];
+		Contours &lines = sl.first;
+		class LineProperties &prop = sl.second;
+
+		output->AddDrawLinesCmd(lines, prop);
+	}
+}
+
+// **********************************************
+
 MapRender::MapRender(class IDrawLib *output) : output(output)
 {
 	extentx1 = 0.0;
@@ -33,8 +74,10 @@ void MapRender::ToDrawSpace(double nx, double ny, double &px, double &py)
 	py = ny * height + extenty1;
 }
 
-void MapRender::Render(int layerNum, int zoom, class FeatureStore &featureStore, class ITransform &transform)
+void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransform &transform)
 {
+	class DrawTreeNode drawTree;
+
 	for(size_t i=0;i<featureStore.areas.size();i++)
 	{
 		std::vector<Polygon> polygons;
@@ -42,8 +85,10 @@ void MapRender::Render(int layerNum, int zoom, class FeatureStore &featureStore,
 		Contours inners;
 
 		class FeatureArea &area = featureStore.areas[i];
-		int ln = this->GetLayerNum(area.tags);
-		if(ln != layerNum) continue;
+
+		StyleDef styleDef;
+		int recognisedStyle = style.GetStyle(zoom, area.tags, Style::Area, styleDef);
+		if(!recognisedStyle) continue;
 
 		std::vector<IdLatLonList> &outerShapes = area.outerShapes;
 		for(size_t j=0;j<outerShapes.size();j++)
@@ -60,12 +105,26 @@ void MapRender::Render(int layerNum, int zoom, class FeatureStore &featureStore,
 				outer.push_back(Point(px, py));
 			}
 		}
-		Polygon polygon(outer, inners);
-		polygons.push_back(polygon);
 
-		class ShapeProperties prop(double(rand()%100) / 100.0, double(rand()%100) / 100.0, double(rand()%100) / 100.0);
-		this->output->AddDrawPolygonsCmd(polygons, prop);
+		//Integrate shape into draw tree
+		for(size_t j=0; j< styleDef.size(); j++)
+		{
+			StyleAndLayerDef &styleAndLayerDef = styleDef[j];
+			LayerDef &layerDef = styleAndLayerDef.first;
+			StyleAttributes &styleAttributes = styleAndLayerDef.second;
 
+			Polygon polygon(outer, inners);
+			polygons.push_back(polygon);
+
+			class ShapeProperties prop(double(rand()%100) / 100.0, double(rand()%100) / 100.0, double(rand()%100) / 100.0);
+			TagMap::const_iterator colIt = styleAttributes.find("fill-color");
+			if(colIt != styleAttributes.end()) {
+				int colOk = this->ColourStringToRgb(colIt->second.c_str(), prop.r, prop.g, prop.b);
+				if(!colOk) continue;
+			}
+
+			drawTree.styledPolygons.push_back(StyledPolygons(polygons, prop));	
+		}
 	}	
 
 	for(size_t i=0;i<featureStore.lines.size();i++)
@@ -73,11 +132,9 @@ void MapRender::Render(int layerNum, int zoom, class FeatureStore &featureStore,
 		Contour line1;
 
 		class FeatureLine &line = featureStore.lines[i];
-		int ln = this->GetLayerNum(line.tags);
-		if(ln != layerNum) continue;
 
-		StyleAttributes styleAttributes;
-		int recognisedStyle = style.GetStyle(zoom, line.tags, Style::Line, styleAttributes);
+		StyleDef styleDef;
+		int recognisedStyle = style.GetStyle(zoom, line.tags, Style::Line, styleDef);
 		if(!recognisedStyle) continue;
 
 		IdLatLonList &shape = line.shape;
@@ -89,19 +146,27 @@ void MapRender::Render(int layerNum, int zoom, class FeatureStore &featureStore,
 			double px = 0.0, py = 0.0;
 			this->ToDrawSpace(sx, sy, px, py);
 
-			line1.push_back(Point(px, py));			
+			line1.push_back(Point(px, py));
 		}
 
-		class LineProperties lineProp1(double(rand()%100) / 100.0, double(rand()%100) / 100.0, double(rand()%100) / 100.0, 3.0);
-		TagMap::const_iterator colIt = styleAttributes.find("line-color");
-		if(colIt != styleAttributes.end()) {
-			int colOk = this->ColourStringToRgb(colIt->second.c_str(), lineProp1.r, lineProp1.g, lineProp1.b);
-			if(!colOk) continue;
-		}
+		//Integrate shape into draw tree
+		for(size_t j=0; j< styleDef.size(); j++)
+		{
+			StyleAndLayerDef &styleAndLayerDef = styleDef[j];
+			LayerDef &layerDef = styleAndLayerDef.first;
+			StyleAttributes &styleAttributes = styleAndLayerDef.second;
+
+			class LineProperties lineProp1(double(rand()%100) / 100.0, double(rand()%100) / 100.0, double(rand()%100) / 100.0, 3.0);
+			TagMap::const_iterator colIt = styleAttributes.find("line-color");
+			if(colIt != styleAttributes.end()) {
+				int colOk = this->ColourStringToRgb(colIt->second.c_str(), lineProp1.r, lineProp1.g, lineProp1.b);
+				if(!colOk) continue;
+			}
 		
-		Contours lines1;
-		lines1.push_back(line1);
-		output->AddDrawLinesCmd(lines1, lineProp1);
+			Contours lines1;
+			lines1.push_back(line1);
+			drawTree.styledLines.push_back(StyledLines(lines1, lineProp1));
+		}
 	}	
 
 	for(size_t i=0;i<featureStore.pois.size();i++)
@@ -109,19 +174,13 @@ void MapRender::Render(int layerNum, int zoom, class FeatureStore &featureStore,
 		class FeaturePoi &poi = featureStore.pois[i];
 		double sx = 0.0, sy = 0.0;
 
-		int ln = this->GetLayerNum(poi.tags);
-		if(ln != layerNum) continue;
 
 	}
 
-	output->Draw();
-}
+	//Interate through draw tree to produce ordered draw commands
+	drawTree.WriteDrawCommands(output);
 
-int MapRender::GetLayerNum(const TagMap &tags)
-{
-	TagMap::const_iterator it = tags.find("layer");
-	if(it == tags.end()) return 0;
-	return atoi(it->second.c_str());
+	output->Draw();
 }
 
 int MapRender::ColourStringToRgb(const char *colStr, double &r, double &g, double &b)
