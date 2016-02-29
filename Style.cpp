@@ -8,7 +8,7 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 
 
 	TagMap::const_iterator it = tags.find("highway");
-	if(it != tags.end())
+	if(it != tags.end() && featuretype == Line)
 	{
 		StyleAttributes style;
 		style["line-color"] = "#ededed";
@@ -20,7 +20,7 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 	}
 
 	it = tags.find("landuse");
-	if(it != tags.end())
+	if(it != tags.end() && featuretype == Area)
 	{
 		StyleAttributes style;
 		style["fill-color"] = "#444444";
