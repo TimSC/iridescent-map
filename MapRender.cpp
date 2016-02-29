@@ -179,10 +179,16 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransf
 			LayerDef &layerDef = styleAndLayerDef.first;
 			StyleAttributes &styleAttributes = styleAndLayerDef.second;
 
-			class LineProperties lineProp1(double(rand()%100) / 100.0, double(rand()%100) / 100.0, double(rand()%100) / 100.0, 3.0);
-			TagMap::const_iterator colIt = styleAttributes.find("line-color");
-			if(colIt != styleAttributes.end()) {
-				int colOk = this->ColourStringToRgb(colIt->second.c_str(), lineProp1.r, lineProp1.g, lineProp1.b);
+			int lineWidth = 1.0;
+			TagMap::const_iterator attrIt = styleAttributes.find("line-width");
+			if(attrIt != styleAttributes.end()) {
+				lineWidth = atof(attrIt->second.c_str());
+			}
+		
+			class LineProperties lineProp1(double(rand()%100) / 100.0, double(rand()%100) / 100.0, double(rand()%100) / 100.0, lineWidth);
+			attrIt = styleAttributes.find("line-color");
+			if(attrIt != styleAttributes.end()) {
+				int colOk = this->ColourStringToRgb(attrIt->second.c_str(), lineProp1.r, lineProp1.g, lineProp1.b);
 				if(!colOk) continue;
 			}
 		
