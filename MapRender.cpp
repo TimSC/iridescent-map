@@ -10,6 +10,7 @@ DrawTreeNode::DrawTreeNode()
 
 }
 
+
 DrawTreeNode::DrawTreeNode(const class DrawTreeNode &a)
 {
 	styledPolygons = a.styledPolygons;
@@ -32,20 +33,18 @@ void DrawTreeNode::WriteDrawCommands(class IDrawLib *output)
 		child.WriteDrawCommands(output);
 	}
 
-	for(size_t i=0;i < this->styledPolygons.size();i++)
+	for(StyledPolygons::iterator it = this->styledPolygons.begin(); it != styledPolygons.end(); it ++)
 	{
-		StyledPolygons &sp = styledPolygons[i];
-		std::vector<Polygon> &polys = sp.first;
-		class ShapeProperties &prop = sp.second;
+		std::vector<Polygon> &polys = it->second;
+		const class ShapeProperties &prop = it->first;
 
 		output->AddDrawPolygonsCmd(polys, prop);
 	}
 
-	for(size_t i=0;i < this->styledLines.size();i++)
+	for(StyledLines::iterator it = this->styledLines.begin(); it != this->styledLines.end(); it++)
 	{
-		StyledLines &sl = styledLines[i];
-		Contours &lines = sl.first;
-		class LineProperties &prop = sl.second;
+		Contours &lines = it->second;
+		const class LineProperties &prop = it->first;
 
 		output->AddDrawLinesCmd(lines, prop);
 	}
@@ -143,7 +142,11 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransf
 			}
 
 			class DrawTreeNode *node = drawTree.GetLayer(layerDef);
-			node->styledPolygons.push_back(StyledPolygons(polygons, prop));	
+			StyledPolygons::iterator sp = node->styledPolygons.find(prop);
+			if(sp == node->styledPolygons.end())
+				node->styledPolygons[prop] = polygons;
+			else
+				sp->second.insert(sp->second.end(), polygons.begin(), polygons.end());
 		}
 	}
 
@@ -187,7 +190,11 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransf
 			lines1.push_back(line1);
 
 			class DrawTreeNode *node = drawTree.GetLayer(layerDef);
-			node->styledLines.push_back(StyledLines(lines1, lineProp1));
+			StyledLines::iterator sl = node->styledLines.find(lineProp1);
+			if(sl == node->styledLines.end())
+				node->styledLines[lineProp1] = lines1;
+			else
+				sl->second.insert(sl->second.end(), lines1.begin(), lines1.end());
 		}
 	}	
 

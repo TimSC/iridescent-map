@@ -6,16 +6,16 @@
 #include "Transform.h"
 #include "Style.h"
 
-typedef std::pair<std::vector<Polygon>, class ShapeProperties> StyledPolygons;
-typedef std::pair<Contours, class LineProperties> StyledLines;
-typedef std::pair<std::vector<class TextLabel>, class TextProperties> StyledText;
+typedef std::map<class ShapeProperties, std::vector<Polygon> > StyledPolygons;
+typedef std::map<class LineProperties, Contours> StyledLines;
+typedef std::map<class TextProperties, std::vector<class TextLabel> > StyledText;
 
 class DrawTreeNode
 {
 public:
-	std::vector<StyledPolygons> styledPolygons;
-	std::vector<StyledLines> styledLines;
-	std::vector<StyledText> styledText;
+	StyledPolygons styledPolygons;
+	StyledLines styledLines;
+	StyledText styledText;
 	
 	std::map<int, class DrawTreeNode> children;
 
