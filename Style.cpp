@@ -16,12 +16,12 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		{
 			knownType = true;
 			style["line-color"] = "#000055";
-			style["line-width"] = "5";
+			style["line-width"] = "8";
 			layerDef.push_back(1);
 			layerDef.push_back(4);
 
 			style2["line-color"] = "#0000aa";
-			style2["line-width"] = "4";
+			style2["line-width"] = "6";
 			layerDef2.push_back(1);
 			layerDef2.push_back(10);
 		}
@@ -30,12 +30,12 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		{
 			knownType = true;
 			style["line-color"] = "#005500";
-			style["line-width"] = "4";
+			style["line-width"] = "7";
 			layerDef.push_back(1);
 			layerDef.push_back(3);
 
 			style2["line-color"] = "#00aa00";
-			style2["line-width"] = "3";
+			style2["line-width"] = "5";
 			layerDef2.push_back(1);
 			layerDef2.push_back(9);
 		}
@@ -44,7 +44,7 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		{
 			knownType = true;
 			style["line-color"] = "#550000";
-			style["line-width"] = "4";
+			style["line-width"] = "5";
 			layerDef.push_back(1);
 			layerDef.push_back(2);
 
@@ -81,8 +81,14 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 			layerDef2.push_back(6);
 		}
 
+		style["line-join"] = "round";
+		style["line-cap"] = "round";
+		style2["line-join"] = "round";
+		style2["line-cap"] = "round";
+
 		styleDefOut.push_back(StyleAndLayerDef(layerDef, style));
 		styleDefOut.push_back(StyleAndLayerDef(layerDef2, style2));
+
 		return 1;
 	}
 
@@ -90,10 +96,13 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 	if(it != tags.end() && featuretype == Area)
 	{
 		StyleAttributes style;
-		style["fill-color"] = "#44aa44";
+		style["polygon-fill"] = "#444444";
+		style["polygon-gamma"] = "1.0";
+
 		LayerDef layerDef;
 		layerDef.push_back(1);
 		layerDef.push_back(1);
+
 		styleDefOut.push_back(StyleAndLayerDef(layerDef, style));
 		return 1;
 	}

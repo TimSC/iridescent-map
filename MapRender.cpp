@@ -135,7 +135,7 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransf
 			polygons.push_back(polygon);
 
 			class ShapeProperties prop(double(rand()%100) / 100.0, double(rand()%100) / 100.0, double(rand()%100) / 100.0);
-			TagMap::const_iterator colIt = styleAttributes.find("fill-color");
+			TagMap::const_iterator colIt = styleAttributes.find("polygon-fill");
 			if(colIt != styleAttributes.end()) {
 				int colOk = this->ColourStringToRgb(colIt->second.c_str(), prop.r, prop.g, prop.b);
 				if(!colOk) continue;
@@ -179,19 +179,32 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransf
 			LayerDef &layerDef = styleAndLayerDef.first;
 			StyleAttributes &styleAttributes = styleAndLayerDef.second;
 
+			class LineProperties lineProp1(1.0, 1.0, 1.0);
+
 			int lineWidth = 1.0;
 			TagMap::const_iterator attrIt = styleAttributes.find("line-width");
-			if(attrIt != styleAttributes.end()) {
+			if(attrIt != styleAttributes.end())
 				lineWidth = atof(attrIt->second.c_str());
-			}
-		
-			class LineProperties lineProp1(double(rand()%100) / 100.0, double(rand()%100) / 100.0, double(rand()%100) / 100.0, lineWidth);
+			lineProp1.lineWidth = lineWidth;
+			
+			std::string lineCap = "butt";
+			attrIt = styleAttributes.find("line-cap");
+			if(attrIt != styleAttributes.end())
+				lineCap = attrIt->second;
+			lineProp1.lineCap = lineCap;
+
+			std::string lineJoin = "miter";
+			attrIt = styleAttributes.find("line-join");
+			if(attrIt != styleAttributes.end())
+				lineJoin = attrIt->second;
+			lineProp1.lineJoin = lineJoin;
+			
 			attrIt = styleAttributes.find("line-color");
 			if(attrIt != styleAttributes.end()) {
 				int colOk = this->ColourStringToRgb(attrIt->second.c_str(), lineProp1.r, lineProp1.g, lineProp1.b);
 				if(!colOk) continue;
 			}
-		
+
 			Contours lines1;
 			lines1.push_back(line1);
 
