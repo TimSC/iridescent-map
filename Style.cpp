@@ -5,25 +5,81 @@ using namespace std;
 
 int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, StyleDef &styleDefOut)
 {
-
-
 	TagMap::const_iterator it = tags.find("highway");
 	if(it != tags.end() && featuretype == Line)
 	{
-		StyleAttributes style;
-		style["line-color"] = "#000000";
-		style["line-width"] = "3";
+		StyleAttributes style, style2;
+		LayerDef layerDef, layerDef2;
 
-		LayerDef layerDef;
-		layerDef.push_back(1);
-		layerDef.push_back(3);
+		bool knownType = false;
+		if(it->second == "motorway")
+		{
+			knownType = true;
+			style["line-color"] = "#000055";
+			style["line-width"] = "5";
+			layerDef.push_back(1);
+			layerDef.push_back(4);
 
-		StyleAttributes style2;
-		style2["line-color"] = "#ffffff";
-		style2["line-width"] = "2";
-		LayerDef layerDef2;
-		layerDef.push_back(1);
-		layerDef.push_back(4);
+			style2["line-color"] = "#0000aa";
+			style2["line-width"] = "4";
+			layerDef2.push_back(1);
+			layerDef2.push_back(10);
+		}
+
+		if(it->second == "trunk")
+		{
+			knownType = true;
+			style["line-color"] = "#005500";
+			style["line-width"] = "4";
+			layerDef.push_back(1);
+			layerDef.push_back(3);
+
+			style2["line-color"] = "#00aa00";
+			style2["line-width"] = "3";
+			layerDef2.push_back(1);
+			layerDef2.push_back(9);
+		}
+
+		if(it->second == "primary")
+		{
+			knownType = true;
+			style["line-color"] = "#550000";
+			style["line-width"] = "4";
+			layerDef.push_back(1);
+			layerDef.push_back(2);
+
+			style2["line-color"] = "#aa0000";
+			style2["line-width"] = "3";
+			layerDef2.push_back(1);
+			layerDef2.push_back(8);
+		}
+
+		if(it->second == "secondary")
+		{
+			knownType = true;
+			style["line-color"] = "#55555500";
+			style["line-width"] = "4";
+			layerDef.push_back(1);
+			layerDef.push_back(1);
+
+			style2["line-color"] = "#aaaaaa00";
+			style2["line-width"] = "3";
+			layerDef2.push_back(1);
+			layerDef2.push_back(7);
+		}
+		
+		if(!knownType)
+		{
+			style["line-color"] = "#000000";
+			style["line-width"] = "3";
+			layerDef.push_back(1);
+			layerDef.push_back(0);
+
+			style2["line-color"] = "#aaaaaa";
+			style2["line-width"] = "2";
+			layerDef2.push_back(1);
+			layerDef2.push_back(6);
+		}
 
 		styleDefOut.push_back(StyleAndLayerDef(layerDef, style));
 		styleDefOut.push_back(StyleAndLayerDef(layerDef2, style2));
