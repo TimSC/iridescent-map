@@ -107,6 +107,21 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		return 1;
 	}
 
+	it = tags.find("amenity");
+	if(it != tags.end() && featuretype == Poi && it->second == "pub")
+	{
+		StyleAttributes style;
+		style["text-name"] = "[name]";
+		style["text-size"] = "9";
+
+		LayerDef layerDef;
+		layerDef.push_back(2);
+		layerDef.push_back(1);
+
+		styleDefOut.push_back(StyleAndLayerDef(layerDef, style));
+		return 1;
+	}
+
 	return 0;
 
 }

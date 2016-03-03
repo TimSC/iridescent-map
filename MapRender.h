@@ -42,6 +42,13 @@ public:
 	void ToDrawSpace(double nx, double ny, double &px, double &py);
 	void IdLatLonListsToContour(IdLatLonList &shape, class ITransform &transform, Contour &line1);
 	void DrawToTree(StyleDef &styleDef, const std::vector<Polygon> &polygons, class DrawTreeNode &drawTree);
+	void DrawPolygonsToLabelEngine(StyleDef &styleDef, const std::vector<Polygon> &polygons, 
+		class LabelEngine &labelEngine, TagMap &tags);
+	void DrawLineToLabelEngine(StyleDef &styleDef, const Contour &line, 
+		class LabelEngine &labelEngine, TagMap &tags);
+	void DrawPoiToLabelEngine(StyleDef &styleDef, double sx, double sy, 
+		class LabelEngine &labelEngine, TagMap &tags);
+
 	int ColourStringToRgb(const char *colStr, double &r, double &g, double &b);
 };
 

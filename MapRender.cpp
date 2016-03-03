@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include "LabelEngine.h"
 using namespace std;
 
 DrawTreeNode::DrawTreeNode()
@@ -95,7 +96,9 @@ void MapRender::ToDrawSpace(double nx, double ny, double &px, double &py)
 void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransform &transform)
 {
 	class DrawTreeNode drawTree;
-
+	class LabelEngine labelEngine(output);
+	
+	//Render polygons to draw tree
 	for(size_t i=0;i<featureStore.areas.size();i++)
 	{
 		std::vector<Polygon> polygons;
@@ -121,6 +124,7 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransf
 		this->DrawToTree(styleDef, polygons, drawTree);
 	}
 
+	//Render lines to draw tree
 	for(size_t i=0;i<featureStore.lines.size();i++)
 	{
 		//Pretend these are polygons
@@ -142,16 +146,27 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransf
 		this->DrawToTree(styleDef, lineAsPolygons, drawTree);
 	}
 
+	//Render points to draw tree
 	for(size_t i=0;i<featureStore.pois.size();i++)
 	{
 		class FeaturePoi &poi = featureStore.pois[i];
+
+		StyleDef styleDef;
+		int recognisedStyle = style.GetStyle(zoom, poi.tags, Style::Poi, styleDef);
+		if(!recognisedStyle) continue;
+
 		double sx = 0.0, sy = 0.0;
+		transform.LatLong2Screen(poi.lat, poi.lon, sx, sy);
+		double px = 0.0, py = 0.0;
+		this->ToDrawSpace(sx, sy, px, py);
 
-
+		this->DrawPoiToLabelEngine(styleDef, px, py, labelEngine, poi.tags);
 	}
 
 	//Interate through draw tree to produce ordered draw commands
 	drawTree.WriteDrawCommands(output);
+
+	labelEngine.WriteDrawCommands();
 
 	output->Draw();
 }
@@ -243,9 +258,73 @@ void MapRender::DrawToTree(StyleDef &styleDef, const std::vector<Polygon> &polyg
 		else
 			sl->second.insert(sl->second.end(), lines1.begin(), lines1.end());
 	}
-
 }
 
+void MapRender::DrawPolygonsToLabelEngine(StyleDef &styleDef, const std::vector<Polygon> &polygons, 
+	class LabelEngine &labelEngine, TagMap &tags)
+{
+	//Transfer POI markers and labels to label engine
+	for(size_t j=0; j< styleDef.size(); j++)
+	{
+		StyleAndLayerDef &styleAndLayerDef = styleDef[j];
+		LayerDef &layerDef = styleAndLayerDef.first;
+		StyleAttributes &styleAttributes = styleAndLayerDef.second;
+
+		string textName = "";
+		TagMap::const_iterator attrIt = styleAttributes.find("text-name");
+		if(attrIt != styleAttributes.end()) {
+			textName = attrIt->second;
+		}
+		else
+			continue; //Don't draw if colour not specified
+
+		labelEngine.AddPolygonLabel(polygons, textName, tags);
+	}
+}
+
+void MapRender::DrawLineToLabelEngine(StyleDef &styleDef, const Contour &line, 
+	class LabelEngine &labelEngine, TagMap &tags)
+{
+	//Transfer POI markers and labels to label engine
+	for(size_t j=0; j< styleDef.size(); j++)
+	{
+		StyleAndLayerDef &styleAndLayerDef = styleDef[j];
+		LayerDef &layerDef = styleAndLayerDef.first;
+		StyleAttributes &styleAttributes = styleAndLayerDef.second;
+
+		string textName = "";
+		TagMap::const_iterator attrIt = styleAttributes.find("text-name");
+		if(attrIt != styleAttributes.end()) {
+			textName = attrIt->second;
+		}
+		else
+			continue; //Don't draw if colour not specified
+
+		labelEngine.AddLineLabel(line, textName, tags);
+	}
+}
+
+void MapRender::DrawPoiToLabelEngine(StyleDef &styleDef, double sx, double sy, 
+	class LabelEngine &labelEngine, TagMap &tags)
+{
+	//Transfer POI markers and labels to label engine
+	for(size_t j=0; j< styleDef.size(); j++)
+	{
+		StyleAndLayerDef &styleAndLayerDef = styleDef[j];
+		LayerDef &layerDef = styleAndLayerDef.first;
+		StyleAttributes &styleAttributes = styleAndLayerDef.second;
+
+		string textName = "";
+		TagMap::const_iterator attrIt = styleAttributes.find("text-name");
+		if(attrIt != styleAttributes.end()) {
+			textName = attrIt->second;
+		}
+		else
+			continue; //Don't draw if colour not specified
+
+		labelEngine.AddPoiLabel(sx, sy, textName, tags);
+	}
+}
 
 int MapRender::ColourStringToRgb(const char *colStr, double &r, double &g, double &b)
 {
