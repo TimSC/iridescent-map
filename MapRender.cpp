@@ -112,47 +112,21 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransf
 		for(size_t j=0;j<outerShapes.size();j++)
 		{
 			IdLatLonList &outerShape = outerShapes[j];
-			for(size_t k=0;k < outerShape.size(); k++)
-			{
-				IdLatLon &pt = outerShape[k];
-				double sx = 0.0, sy = 0.0;
-				transform.LatLong2Screen(pt.lat, pt.lon, sx, sy);
-				//cout << sx << ","<< sy << endl;
-				double px = 0.0, py = 0.0;
-				this->ToDrawSpace(sx, sy, px, py);
-				outer.push_back(Point(px, py));
-			}
+			this->IdLatLonListsToContour(outerShape, transform, outer);
 		}
+		Polygon polygon(outer, inners);
+		polygons.push_back(polygon);
 
 		//Integrate shape into draw tree
-		for(size_t j=0; j< styleDef.size(); j++)
-		{
-			StyleAndLayerDef &styleAndLayerDef = styleDef[j];
-			LayerDef &layerDef = styleAndLayerDef.first;
-			StyleAttributes &styleAttributes = styleAndLayerDef.second;
-
-			Polygon polygon(outer, inners);
-			polygons.push_back(polygon);
-
-			class ShapeProperties prop(double(rand()%100) / 100.0, double(rand()%100) / 100.0, double(rand()%100) / 100.0);
-			TagMap::const_iterator colIt = styleAttributes.find("polygon-fill");
-			if(colIt != styleAttributes.end()) {
-				int colOk = this->ColourStringToRgb(colIt->second.c_str(), prop.r, prop.g, prop.b);
-				if(!colOk) continue;
-			}
-
-			class DrawTreeNode *node = drawTree.GetLayer(layerDef);
-			StyledPolygons::iterator sp = node->styledPolygons.find(prop);
-			if(sp == node->styledPolygons.end())
-				node->styledPolygons[prop] = polygons;
-			else
-				sp->second.insert(sp->second.end(), polygons.begin(), polygons.end());
-		}
+		this->DrawToTree(styleDef, polygons, drawTree);
 	}
 
 	for(size_t i=0;i<featureStore.lines.size();i++)
 	{
+		//Pretend these are polygons
+		std::vector<Polygon> lineAsPolygons;
 		Contour line1;
+		Contours innersEmpty;
 
 		class FeatureLine &line = featureStore.lines[i];
 
@@ -161,61 +135,12 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransf
 		if(!recognisedStyle) continue;
 
 		IdLatLonList &shape = line.shape;
-		for(size_t j=0;j<shape.size();j++)
-		{
-			IdLatLon &pt = shape[j];
-			double sx = 0.0, sy = 0.0;
-			transform.LatLong2Screen(pt.lat, pt.lon, sx, sy);
-			double px = 0.0, py = 0.0;
-			this->ToDrawSpace(sx, sy, px, py);
+		this->IdLatLonListsToContour(shape, transform, line1);
+		Polygon lineAsPolygon(line1, innersEmpty);
+		lineAsPolygons.push_back(lineAsPolygon);
 
-			line1.push_back(Point(px, py));
-		}
-
-		//Integrate shape into draw tree
-		for(size_t j=0; j< styleDef.size(); j++)
-		{
-			StyleAndLayerDef &styleAndLayerDef = styleDef[j];
-			LayerDef &layerDef = styleAndLayerDef.first;
-			StyleAttributes &styleAttributes = styleAndLayerDef.second;
-
-			class LineProperties lineProp1(1.0, 1.0, 1.0);
-
-			int lineWidth = 1.0;
-			TagMap::const_iterator attrIt = styleAttributes.find("line-width");
-			if(attrIt != styleAttributes.end())
-				lineWidth = atof(attrIt->second.c_str());
-			lineProp1.lineWidth = lineWidth;
-			
-			std::string lineCap = "butt";
-			attrIt = styleAttributes.find("line-cap");
-			if(attrIt != styleAttributes.end())
-				lineCap = attrIt->second;
-			lineProp1.lineCap = lineCap;
-
-			std::string lineJoin = "miter";
-			attrIt = styleAttributes.find("line-join");
-			if(attrIt != styleAttributes.end())
-				lineJoin = attrIt->second;
-			lineProp1.lineJoin = lineJoin;
-			
-			attrIt = styleAttributes.find("line-color");
-			if(attrIt != styleAttributes.end()) {
-				int colOk = this->ColourStringToRgb(attrIt->second.c_str(), lineProp1.r, lineProp1.g, lineProp1.b);
-				if(!colOk) continue;
-			}
-
-			Contours lines1;
-			lines1.push_back(line1);
-
-			class DrawTreeNode *node = drawTree.GetLayer(layerDef);
-			StyledLines::iterator sl = node->styledLines.find(lineProp1);
-			if(sl == node->styledLines.end())
-				node->styledLines[lineProp1] = lines1;
-			else
-				sl->second.insert(sl->second.end(), lines1.begin(), lines1.end());
-		}
-	}	
+		this->DrawToTree(styleDef, lineAsPolygons, drawTree);
+	}
 
 	for(size_t i=0;i<featureStore.pois.size();i++)
 	{
@@ -230,6 +155,93 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransf
 
 	output->Draw();
 }
+
+void MapRender::IdLatLonListsToContour(IdLatLonList &shape, class ITransform &transform, Contour &line1)
+{
+	line1.clear();
+	for(size_t j=0;j<shape.size();j++)
+	{
+		IdLatLon &pt = shape[j];
+		double sx = 0.0, sy = 0.0;
+		transform.LatLong2Screen(pt.lat, pt.lon, sx, sy);
+		double px = 0.0, py = 0.0;
+		this->ToDrawSpace(sx, sy, px, py);
+
+		line1.push_back(Point(px, py));
+	}
+}
+
+void MapRender::DrawToTree(StyleDef &styleDef, const std::vector<Polygon> &polygons, class DrawTreeNode &drawTree)
+{
+	//Integrate area shape into draw tree
+	for(size_t j=0; j< styleDef.size(); j++)
+	{
+		StyleAndLayerDef &styleAndLayerDef = styleDef[j];
+		LayerDef &layerDef = styleAndLayerDef.first;
+		StyleAttributes &styleAttributes = styleAndLayerDef.second;
+
+		class ShapeProperties prop(double(rand()%100) / 100.0, double(rand()%100) / 100.0, double(rand()%100) / 100.0);
+		TagMap::const_iterator colIt = styleAttributes.find("polygon-fill");
+		if(colIt != styleAttributes.end()) {
+			int colOk = this->ColourStringToRgb(colIt->second.c_str(), prop.r, prop.g, prop.b);
+			if(!colOk) continue;
+		}
+
+		class DrawTreeNode *node = drawTree.GetLayer(layerDef);
+		StyledPolygons::iterator sp = node->styledPolygons.find(prop);
+		if(sp == node->styledPolygons.end())
+			node->styledPolygons[prop] = polygons;
+		else
+			sp->second.insert(sp->second.end(), polygons.begin(), polygons.end());
+	}
+
+	//Integrate line shape into draw tree
+	for(size_t j=0; j< styleDef.size(); j++)
+	{
+		StyleAndLayerDef &styleAndLayerDef = styleDef[j];
+		LayerDef &layerDef = styleAndLayerDef.first;
+		StyleAttributes &styleAttributes = styleAndLayerDef.second;
+
+		class LineProperties lineProp1(1.0, 1.0, 1.0);
+
+		int lineWidth = 1.0;
+		TagMap::const_iterator attrIt = styleAttributes.find("line-width");
+		if(attrIt != styleAttributes.end())
+			lineWidth = atof(attrIt->second.c_str());
+		lineProp1.lineWidth = lineWidth;
+		
+		std::string lineCap = "butt";
+		attrIt = styleAttributes.find("line-cap");
+		if(attrIt != styleAttributes.end())
+			lineCap = attrIt->second;
+		lineProp1.lineCap = lineCap;
+
+		std::string lineJoin = "miter";
+		attrIt = styleAttributes.find("line-join");
+		if(attrIt != styleAttributes.end())
+			lineJoin = attrIt->second;
+		lineProp1.lineJoin = lineJoin;
+		
+		attrIt = styleAttributes.find("line-color");
+		if(attrIt != styleAttributes.end()) {
+			int colOk = this->ColourStringToRgb(attrIt->second.c_str(), lineProp1.r, lineProp1.g, lineProp1.b);
+			if(!colOk) continue;
+		}
+
+		Contours lines1;
+		for(size_t i=0;i<polygons.size();i++)
+			lines1.push_back(polygons[i].first);
+
+		class DrawTreeNode *node = drawTree.GetLayer(layerDef);
+		StyledLines::iterator sl = node->styledLines.find(lineProp1);
+		if(sl == node->styledLines.end())
+			node->styledLines[lineProp1] = lines1;
+		else
+			sl->second.insert(sl->second.end(), lines1.begin(), lines1.end());
+	}
+
+}
+
 
 int MapRender::ColourStringToRgb(const char *colStr, double &r, double &g, double &b)
 {

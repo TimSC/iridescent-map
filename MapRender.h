@@ -40,6 +40,8 @@ public:
 
 	void Render(int zoom, class FeatureStore &featureStore, class ITransform &transform);
 	void ToDrawSpace(double nx, double ny, double &px, double &py);
+	void IdLatLonListsToContour(IdLatLonList &shape, class ITransform &transform, Contour &line1);
+	void DrawToTree(StyleDef &styleDef, const std::vector<Polygon> &polygons, class DrawTreeNode &drawTree);
 	int ColourStringToRgb(const char *colStr, double &r, double &g, double &b);
 };
 
