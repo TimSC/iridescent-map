@@ -186,6 +186,8 @@ void MapRender::DrawToTree(StyleDef &styleDef, const std::vector<Polygon> &polyg
 			int colOk = this->ColourStringToRgb(colIt->second.c_str(), prop.r, prop.g, prop.b);
 			if(!colOk) continue;
 		}
+		else
+			continue; //Don't draw if colour not specified
 
 		class DrawTreeNode *node = drawTree.GetLayer(layerDef);
 		StyledPolygons::iterator sp = node->styledPolygons.find(prop);
@@ -204,8 +206,16 @@ void MapRender::DrawToTree(StyleDef &styleDef, const std::vector<Polygon> &polyg
 
 		class LineProperties lineProp1(1.0, 1.0, 1.0);
 
+		TagMap::const_iterator attrIt = styleAttributes.find("line-color");
+		if(attrIt != styleAttributes.end()) {
+			int colOk = this->ColourStringToRgb(attrIt->second.c_str(), lineProp1.r, lineProp1.g, lineProp1.b);
+			if(!colOk) continue;
+		}
+		else
+			continue; //Don't draw if colour not specified
+
 		int lineWidth = 1.0;
-		TagMap::const_iterator attrIt = styleAttributes.find("line-width");
+		attrIt = styleAttributes.find("line-width");
 		if(attrIt != styleAttributes.end())
 			lineWidth = atof(attrIt->second.c_str());
 		lineProp1.lineWidth = lineWidth;
@@ -221,12 +231,6 @@ void MapRender::DrawToTree(StyleDef &styleDef, const std::vector<Polygon> &polyg
 		if(attrIt != styleAttributes.end())
 			lineJoin = attrIt->second;
 		lineProp1.lineJoin = lineJoin;
-		
-		attrIt = styleAttributes.find("line-color");
-		if(attrIt != styleAttributes.end()) {
-			int colOk = this->ColourStringToRgb(attrIt->second.c_str(), lineProp1.r, lineProp1.g, lineProp1.b);
-			if(!colOk) continue;
-		}
 
 		Contours lines1;
 		for(size_t i=0;i<polygons.size();i++)
