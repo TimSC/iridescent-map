@@ -113,6 +113,8 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		StyleAttributes style;
 		style["text-name"] = "[name]";
 		style["text-size"] = "9";
+		style["marker-file"] = "url('symbols/pub.16.svg')";
+		style["marker-fill"] = "#734a08";
 
 		LayerDef layerDef;
 		layerDef.push_back(2);
