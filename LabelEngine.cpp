@@ -62,8 +62,21 @@ void LabelEngine::WriteDrawCommands()
 		else
 			outString = textName;
 
+		//Get bounds
+		double width=0.0, height=0.0;
+		class TextProperties foregroundProp(1.0,1.0,1.0);
+		if(this->output != NULL)
+		{			
+			int ret = this->output->GetTextExtents(outString.c_str(), foregroundProp, 
+				width, height);
+			if(ret != 0)
+			{
+				width=0.0, height=0.0;
+			}
+		}
+		
 		std::vector<class TextLabel> textStrs;
-		textStrs.push_back(TextLabel(outString, label.sx, label.sy));
+		textStrs.push_back(TextLabel(outString, label.sx - width / 2.0, label.sy));
 
 		//Ghost background
 		class TextProperties backgroundProp(0.0,0.0,0.0);
@@ -74,7 +87,6 @@ void LabelEngine::WriteDrawCommands()
 			this->output->AddDrawTextCmd(textStrs, backgroundProp);
 
 		//Foreground text
-		class TextProperties foregroundProp(1.0,1.0,1.0);
 		if(this->output != NULL)
 			this->output->AddDrawTextCmd(textStrs, foregroundProp);
 	}
