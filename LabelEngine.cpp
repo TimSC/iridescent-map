@@ -133,10 +133,8 @@ void LabelEngine::WriteDrawCommands()
 		for(size_t j=0; j<rects.size(); j++)
 		{
 			foundOverlap = labelRect.Overlaps(rects[j]);
-			//cout << foundOverlap << endl;
 			if(foundOverlap) break;
 		}
-		//cout << foundOverlap << "," << outString << endl;
 		if(foundOverlap) continue;
 
 		//Ghost background
