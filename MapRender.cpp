@@ -6,6 +6,9 @@
 #include "LabelEngine.h"
 using namespace std;
 
+//Prototypes
+int ColourStringToRgb(const char *colStr, double &r, double &g, double &b);
+
 DrawTreeNode::DrawTreeNode()
 {
 
@@ -63,9 +66,28 @@ class DrawTreeNode *DrawTreeNode::GetLayer(LayerDef &layerDef, int depth)
 	return this->children[requestedAddr].GetLayer(layerDef, depth+1);
 }
 
-// **********************************************
+// ***********************************************
 
-MapRender::MapRender(class IDrawLib *output) : output(output)
+class FeatureConverter
+{
+public:
+	class IDrawLib *output;
+	double extentx1, extenty1, extentx2, extenty2;
+	double width, height;
+	
+	FeatureConverter(class IDrawLib *output);
+	virtual ~FeatureConverter() {};
+
+	void Convert(int zoom, class FeatureStore &featureStore, class ITransform &transform, class Style &style);
+	void IdLatLonListsToContour(IdLatLonList &shape, class ITransform &transform, Contour &line1);
+	void ToDrawSpace(double nx, double ny, double &px, double &py);
+
+	virtual void OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons) = 0;
+	virtual void OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons) = 0;
+	virtual void OutPoi(StyleDef &styleDef, double px, double py, const TagMap &tags) = 0;
+};
+
+FeatureConverter::FeatureConverter(class IDrawLib *output) : output(output)
 {
 	extentx1 = 0.0;
 	extenty1 = 0.0;
@@ -82,22 +104,8 @@ MapRender::MapRender(class IDrawLib *output) : output(output)
 	height = extenty2 - extenty1;
 }
 
-MapRender::~MapRender()
+void FeatureConverter::Convert(int zoom, class FeatureStore &featureStore, class ITransform &transform, class Style &style)
 {
-
-}
-
-void MapRender::ToDrawSpace(double nx, double ny, double &px, double &py)
-{
-	px = nx * width + extentx1;
-	py = ny * height + extenty1;
-}
-
-void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransform &transform)
-{
-	class DrawTreeNode drawTree;
-	class LabelEngine labelEngine(output);
-	
 	//Render polygons to draw tree
 	for(size_t i=0;i<featureStore.areas.size();i++)
 	{
@@ -120,8 +128,7 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransf
 		Polygon polygon(outer, inners);
 		polygons.push_back(polygon);
 
-		//Integrate shape into draw tree
-		this->DrawToTree(styleDef, polygons, drawTree);
+		this->OutArea(styleDef, polygons);
 	}
 
 	//Render lines to draw tree
@@ -143,7 +150,7 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransf
 		Polygon lineAsPolygon(line1, innersEmpty);
 		lineAsPolygons.push_back(lineAsPolygon);
 
-		this->DrawToTree(styleDef, lineAsPolygons, drawTree);
+		this->OutLine(styleDef, lineAsPolygons);
 	}
 
 	//Render points to draw tree
@@ -160,18 +167,13 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransf
 		double px = 0.0, py = 0.0;
 		this->ToDrawSpace(sx, sy, px, py);
 
-		this->DrawPoiToLabelEngine(styleDef, px, py, labelEngine, poi.tags);
+		this->OutPoi(styleDef, px, py, poi.tags);
+
 	}
 
-	//Interate through draw tree to produce ordered draw commands
-	drawTree.WriteDrawCommands(output);
-
-	labelEngine.WriteDrawCommands();
-
-	output->Draw();
 }
 
-void MapRender::IdLatLonListsToContour(IdLatLonList &shape, class ITransform &transform, Contour &line1)
+void FeatureConverter::IdLatLonListsToContour(IdLatLonList &shape, class ITransform &transform, Contour &line1)
 {
 	line1.clear();
 	for(size_t j=0;j<shape.size();j++)
@@ -186,7 +188,42 @@ void MapRender::IdLatLonListsToContour(IdLatLonList &shape, class ITransform &tr
 	}
 }
 
-void MapRender::DrawToTree(StyleDef &styleDef, const std::vector<Polygon> &polygons, class DrawTreeNode &drawTree)
+void FeatureConverter::ToDrawSpace(double nx, double ny, double &px, double &py)
+{
+	px = nx * width + extentx1;
+	py = ny * height + extenty1;
+}
+
+// **************************************************************
+
+class FeaturesToDrawCmds : public FeatureConverter
+{
+public:
+	class DrawTreeNode *drawTree;
+
+	FeaturesToDrawCmds(class IDrawLib *output, class DrawTreeNode *drawTree) : FeatureConverter(output), 
+		drawTree(drawTree) {};
+	virtual ~FeaturesToDrawCmds() {};
+	
+	void OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons);
+	void OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons);
+	void OutPoi(StyleDef &styleDef, double px, double py, const TagMap &tags) {};
+	void DrawToTree(StyleDef &styleDef, const std::vector<Polygon> &polygons);
+};
+
+void FeaturesToDrawCmds::OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons)
+{
+	//Integrate shape into draw tree
+	this->DrawToTree(styleDef, polygons);
+}
+
+void FeaturesToDrawCmds::OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons)
+{
+	//Integrate shape into draw tree
+	this->DrawToTree(styleDef, lineAsPolygons);
+}
+
+void FeaturesToDrawCmds::DrawToTree(StyleDef &styleDef, const std::vector<Polygon> &polygons)
 {
 	//Integrate area shape into draw tree
 	for(size_t j=0; j< styleDef.size(); j++)
@@ -198,13 +235,13 @@ void MapRender::DrawToTree(StyleDef &styleDef, const std::vector<Polygon> &polyg
 		class ShapeProperties prop(double(rand()%100) / 100.0, double(rand()%100) / 100.0, double(rand()%100) / 100.0);
 		TagMap::const_iterator colIt = styleAttributes.find("polygon-fill");
 		if(colIt != styleAttributes.end()) {
-			int colOk = this->ColourStringToRgb(colIt->second.c_str(), prop.r, prop.g, prop.b);
+			int colOk = ColourStringToRgb(colIt->second.c_str(), prop.r, prop.g, prop.b);
 			if(!colOk) continue;
 		}
 		else
 			continue; //Don't draw if colour not specified
 
-		class DrawTreeNode *node = drawTree.GetLayer(layerDef);
+		class DrawTreeNode *node = drawTree->GetLayer(layerDef);
 		StyledPolygons::iterator sp = node->styledPolygons.find(prop);
 		if(sp == node->styledPolygons.end())
 			node->styledPolygons[prop] = polygons;
@@ -223,7 +260,7 @@ void MapRender::DrawToTree(StyleDef &styleDef, const std::vector<Polygon> &polyg
 
 		TagMap::const_iterator attrIt = styleAttributes.find("line-color");
 		if(attrIt != styleAttributes.end()) {
-			int colOk = this->ColourStringToRgb(attrIt->second.c_str(), lineProp1.r, lineProp1.g, lineProp1.b);
+			int colOk = ColourStringToRgb(attrIt->second.c_str(), lineProp1.r, lineProp1.g, lineProp1.b);
 			if(!colOk) continue;
 		}
 		else
@@ -251,7 +288,7 @@ void MapRender::DrawToTree(StyleDef &styleDef, const std::vector<Polygon> &polyg
 		for(size_t i=0;i<polygons.size();i++)
 			lines1.push_back(polygons[i].first);
 
-		class DrawTreeNode *node = drawTree.GetLayer(layerDef);
+		class DrawTreeNode *node = this->drawTree->GetLayer(layerDef);
 		StyledLines::iterator sl = node->styledLines.find(lineProp1);
 		if(sl == node->styledLines.end())
 			node->styledLines[lineProp1] = lines1;
@@ -260,8 +297,22 @@ void MapRender::DrawToTree(StyleDef &styleDef, const std::vector<Polygon> &polyg
 	}
 }
 
-void MapRender::DrawPolygonsToLabelEngine(StyleDef &styleDef, const std::vector<Polygon> &polygons, 
-	class LabelEngine &labelEngine, TagMap &tags)
+// **********************************************
+
+class FeaturesToLabelEngine : public FeatureConverter
+{
+public:
+	class LabelEngine *labelEngine;
+
+	FeaturesToLabelEngine(class IDrawLib *output, class LabelEngine *labelEngine) : FeatureConverter(output), labelEngine(labelEngine) {};
+	virtual ~FeaturesToLabelEngine() {};
+	
+	void OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons) {};
+	void OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons) {};
+	void OutPoi(StyleDef &styleDef, double px, double py, const TagMap &tags);
+};
+
+void FeaturesToLabelEngine::OutPoi(StyleDef &styleDef, double px, double py, const TagMap &tags)
 {
 	//Transfer POI markers and labels to label engine
 	for(size_t j=0; j< styleDef.size(); j++)
@@ -278,55 +329,44 @@ void MapRender::DrawPolygonsToLabelEngine(StyleDef &styleDef, const std::vector<
 		else
 			continue; //Don't draw if colour not specified
 
-		labelEngine.AddPolygonLabel(polygons, textName, tags);
+		this->labelEngine->AddPoiLabel(px, py, textName, tags);
 	}
 }
 
-void MapRender::DrawLineToLabelEngine(StyleDef &styleDef, const Contour &line, 
-	class LabelEngine &labelEngine, TagMap &tags)
+
+
+// **********************************************
+
+MapRender::MapRender(class IDrawLib *output) : output(output)
 {
-	//Transfer POI markers and labels to label engine
-	for(size_t j=0; j< styleDef.size(); j++)
-	{
-		StyleAndLayerDef &styleAndLayerDef = styleDef[j];
-		LayerDef &layerDef = styleAndLayerDef.first;
-		StyleAttributes &styleAttributes = styleAndLayerDef.second;
 
-		string textName = "";
-		TagMap::const_iterator attrIt = styleAttributes.find("text-name");
-		if(attrIt != styleAttributes.end()) {
-			textName = attrIt->second;
-		}
-		else
-			continue; //Don't draw if colour not specified
-
-		labelEngine.AddLineLabel(line, textName, tags);
-	}
 }
 
-void MapRender::DrawPoiToLabelEngine(StyleDef &styleDef, double sx, double sy, 
-	class LabelEngine &labelEngine, TagMap &tags)
+MapRender::~MapRender()
 {
-	//Transfer POI markers and labels to label engine
-	for(size_t j=0; j< styleDef.size(); j++)
-	{
-		StyleAndLayerDef &styleAndLayerDef = styleDef[j];
-		LayerDef &layerDef = styleAndLayerDef.first;
-		StyleAttributes &styleAttributes = styleAndLayerDef.second;
 
-		string textName = "";
-		TagMap::const_iterator attrIt = styleAttributes.find("text-name");
-		if(attrIt != styleAttributes.end()) {
-			textName = attrIt->second;
-		}
-		else
-			continue; //Don't draw if colour not specified
-
-		labelEngine.AddPoiLabel(sx, sy, textName, tags);
-	}
 }
 
-int MapRender::ColourStringToRgb(const char *colStr, double &r, double &g, double &b)
+void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransform &transform)
+{
+	class DrawTreeNode drawTree;
+	class LabelEngine labelEngine(this->output);
+	
+	class FeaturesToDrawCmds featuresToDrawCmds(this->output, &drawTree);
+	featuresToDrawCmds.Convert(zoom, featureStore, transform, this->style);
+
+	class FeaturesToLabelEngine featuresToLabelEngine(this->output, &labelEngine);
+	featuresToLabelEngine.Convert(zoom, featureStore, transform, this->style);
+
+	//Interate through draw tree to produce ordered draw commands
+	drawTree.WriteDrawCommands(this->output);
+
+	labelEngine.WriteDrawCommands();
+
+	this->output->Draw();
+}
+
+int ColourStringToRgb(const char *colStr, double &r, double &g, double &b)
 {
 	if(colStr[0] == '\0')
 		return 0;

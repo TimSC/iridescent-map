@@ -154,17 +154,17 @@ void LabelEngine::WriteDrawCommands()
 	}
 }
 
-void LabelEngine::AddPolygonLabel(const std::vector<Polygon> &polygons, std::string &textName, TagMap &tags)
+void LabelEngine::AddPolygonLabel(const std::vector<Polygon> &polygons, std::string &textName, const TagMap &tags)
 {
 
 }
 
-void LabelEngine::AddLineLabel(const Contour &line, std::string &textName, TagMap &tags)
+void LabelEngine::AddLineLabel(const Contour &line, std::string &textName, const TagMap &tags)
 {
 
 }
 
-void LabelEngine::AddPoiLabel(double sx, double sy, std::string &textName, TagMap &tags)
+void LabelEngine::AddPoiLabel(double sx, double sy, std::string &textName, const TagMap &tags)
 {
 	this->poiLabels.push_back(PoiLabel(sx, sy, textName, tags));
 }

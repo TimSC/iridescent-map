@@ -46,9 +46,9 @@ public:
 
 	void WriteDrawCommands();
 
-	void AddPolygonLabel(const std::vector<Polygon> &polygons, std::string &textName, TagMap &tags);
-	void AddLineLabel(const Contour &line, std::string &textName, TagMap &tags);
-	void AddPoiLabel(double sx, double sy, std::string &textName, TagMap &tags);
+	void AddPolygonLabel(const std::vector<Polygon> &polygons, std::string &textName, const TagMap &tags);
+	void AddLineLabel(const Contour &line, std::string &textName, const TagMap &tags);
+	void AddPoiLabel(double sx, double sy, std::string &textName, const TagMap &tags);
 };
 
 #endif //_LABEL_ENGINE_H
