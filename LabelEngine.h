@@ -4,6 +4,21 @@
 #include "drawlib/drawlib.h"
 #include "cppo5m/o5m.h"
 
+class LabelRect
+{
+public:
+	double x, y, w, h;
+
+	LabelRect();
+	LabelRect(double x, double y, double w, double h);
+	LabelRect(const class LabelRect &a);
+	virtual ~LabelRect();
+	LabelRect& operator=(const LabelRect &arg);
+
+	bool Overlaps(const LabelRect &arg);
+	void Print();
+};
+
 class PoiLabel
 {
 public:

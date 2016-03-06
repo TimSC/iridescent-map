@@ -2,6 +2,52 @@
 #include <iostream>
 using namespace std;
 
+LabelRect::LabelRect() : x(0.0), y(0.0), w(1.0), h(1.0)
+{
+	
+}
+
+LabelRect::LabelRect(double x, double y, double w, double h) : x(x), y(y), w(w), h(h)
+{
+
+}
+
+LabelRect::LabelRect(const class LabelRect &a)
+{
+	*this = a;
+}
+
+LabelRect::~LabelRect()
+{
+
+}
+
+LabelRect& LabelRect::operator=(const LabelRect &arg)
+{
+	x = arg.x;
+	y = arg.y;
+	w = arg.w;
+	h = arg.h;
+	return *this;
+}
+
+bool LabelRect::Overlaps(const LabelRect &arg)
+{
+	if (x + w < arg.x) return false;
+	if (x >= arg.x + arg.w) return false;
+	if (y + h < arg.y) return false;
+	if (y >= arg.y + arg.w) return false;
+	return true;
+}
+
+void LabelRect::Print()
+{
+	cout << x << "," << y << "," << w << "," << h << endl;
+}
+
+
+// ***************************************************
+
 PoiLabel::PoiLabel()
 {
 	sx = 0.0;
@@ -47,6 +93,8 @@ LabelEngine::~LabelEngine()
 
 void LabelEngine::WriteDrawCommands()
 {
+	vector<class LabelRect> rects;
+
 	for(size_t i=0;i < this->poiLabels.size(); i++)
 	{
 		class PoiLabel &label = this->poiLabels[i];
@@ -76,7 +124,20 @@ void LabelEngine::WriteDrawCommands()
 		}
 		
 		std::vector<class TextLabel> textStrs;
-		textStrs.push_back(TextLabel(outString, label.sx - width / 2.0, label.sy));
+		double lx = label.sx - width / 2.0;
+		double ly = label.sy;
+		textStrs.push_back(TextLabel(outString, lx, ly));
+
+		bool foundOverlap = false;
+		class LabelRect labelRect(lx, ly, width, height);
+		for(size_t j=0; j<rects.size(); j++)
+		{
+			foundOverlap = labelRect.Overlaps(rects[j]);
+			//cout << foundOverlap << endl;
+			if(foundOverlap) break;
+		}
+		//cout << foundOverlap << "," << outString << endl;
+		if(foundOverlap) continue;
 
 		//Ghost background
 		class TextProperties backgroundProp(0.0,0.0,0.0);
@@ -89,6 +150,9 @@ void LabelEngine::WriteDrawCommands()
 		//Foreground text
 		if(this->output != NULL)
 			this->output->AddDrawTextCmd(textStrs, foregroundProp);
+
+		//Add rect to list
+		rects.push_back(labelRect);
 	}
 }
 
