@@ -66,6 +66,16 @@ class DrawTreeNode *DrawTreeNode::GetLayer(LayerDef &layerDef, int depth)
 	return this->children[requestedAddr].GetLayer(layerDef, depth+1);
 }
 
+// **************************************************
+
+class IFeatureConverterResult
+{
+public:
+	virtual void OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons) = 0;
+	virtual void OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons) = 0;
+	virtual void OutPoi(StyleDef &styleDef, double px, double py, const TagMap &tags) = 0;
+};
+
 // ***********************************************
 
 class FeatureConverter
@@ -74,6 +84,7 @@ public:
 	class IDrawLib *output;
 	double extentx1, extenty1, extentx2, extenty2;
 	double width, height;
+	std::vector<class IFeatureConverterResult *> shapesOutput;
 	
 	FeatureConverter(class IDrawLib *output);
 	virtual ~FeatureConverter() {};
@@ -81,10 +92,6 @@ public:
 	void Convert(int zoom, class FeatureStore &featureStore, class ITransform &transform, class Style &style);
 	void IdLatLonListsToContour(IdLatLonList &shape, class ITransform &transform, Contour &line1);
 	void ToDrawSpace(double nx, double ny, double &px, double &py);
-
-	virtual void OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons) = 0;
-	virtual void OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons) = 0;
-	virtual void OutPoi(StyleDef &styleDef, double px, double py, const TagMap &tags) = 0;
 };
 
 FeatureConverter::FeatureConverter(class IDrawLib *output) : output(output)
@@ -128,7 +135,8 @@ void FeatureConverter::Convert(int zoom, class FeatureStore &featureStore, class
 		Polygon polygon(outer, inners);
 		polygons.push_back(polygon);
 
-		this->OutArea(styleDef, polygons);
+		for(size_t j=0; j < shapesOutput.size(); j++)
+			shapesOutput[j]->OutArea(styleDef, polygons);
 	}
 
 	//Render lines to draw tree
@@ -150,7 +158,9 @@ void FeatureConverter::Convert(int zoom, class FeatureStore &featureStore, class
 		Polygon lineAsPolygon(line1, innersEmpty);
 		lineAsPolygons.push_back(lineAsPolygon);
 
-		this->OutLine(styleDef, lineAsPolygons);
+		for(size_t j=0; j < shapesOutput.size(); j++)
+			shapesOutput[j]->OutLine(styleDef, lineAsPolygons);
+
 	}
 
 	//Render points to draw tree
@@ -167,7 +177,8 @@ void FeatureConverter::Convert(int zoom, class FeatureStore &featureStore, class
 		double px = 0.0, py = 0.0;
 		this->ToDrawSpace(sx, sy, px, py);
 
-		this->OutPoi(styleDef, px, py, poi.tags);
+		for(size_t j=0; j < shapesOutput.size(); j++)
+			shapesOutput[j]->OutPoi(styleDef, px, py, poi.tags);
 
 	}
 
@@ -196,13 +207,12 @@ void FeatureConverter::ToDrawSpace(double nx, double ny, double &px, double &py)
 
 // **************************************************************
 
-class FeaturesToDrawCmds : public FeatureConverter
+class FeaturesToDrawCmds : public IFeatureConverterResult
 {
 public:
 	class DrawTreeNode *drawTree;
 
-	FeaturesToDrawCmds(class IDrawLib *output, class DrawTreeNode *drawTree) : FeatureConverter(output), 
-		drawTree(drawTree) {};
+	FeaturesToDrawCmds(class DrawTreeNode *drawTree) : drawTree(drawTree) {};
 	virtual ~FeaturesToDrawCmds() {};
 	
 	void OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons);
@@ -299,12 +309,12 @@ void FeaturesToDrawCmds::DrawToTree(StyleDef &styleDef, const std::vector<Polygo
 
 // **********************************************
 
-class FeaturesToLabelEngine : public FeatureConverter
+class FeaturesToLabelEngine : public IFeatureConverterResult
 {
 public:
 	class LabelEngine *labelEngine;
 
-	FeaturesToLabelEngine(class IDrawLib *output, class LabelEngine *labelEngine) : FeatureConverter(output), labelEngine(labelEngine) {};
+	FeaturesToLabelEngine(class LabelEngine *labelEngine) : labelEngine(labelEngine) {};
 	virtual ~FeaturesToLabelEngine() {};
 	
 	void OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons) {};
@@ -352,11 +362,15 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransf
 	class DrawTreeNode drawTree;
 	class LabelEngine labelEngine(this->output);
 	
-	class FeaturesToDrawCmds featuresToDrawCmds(this->output, &drawTree);
-	featuresToDrawCmds.Convert(zoom, featureStore, transform, this->style);
+	class FeatureConverter featureConverter(this->output);
 
-	class FeaturesToLabelEngine featuresToLabelEngine(this->output, &labelEngine);
-	featuresToLabelEngine.Convert(zoom, featureStore, transform, this->style);
+	class FeaturesToDrawCmds featuresToDrawCmds(&drawTree);
+	featureConverter.shapesOutput.push_back(&featuresToDrawCmds);
+
+	class FeaturesToLabelEngine featuresToLabelEngine(&labelEngine);
+	featureConverter.shapesOutput.push_back(&featuresToLabelEngine);
+
+	featureConverter.Convert(zoom, featureStore, transform, this->style);
 
 	//Interate through draw tree to produce ordered draw commands
 	drawTree.WriteDrawCommands(this->output);
