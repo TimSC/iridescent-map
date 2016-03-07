@@ -120,12 +120,24 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		styleDefOut.push_back(StyleAndLayerDef(layerDef, style));
 		return 1;
 	}
+	if(it != tags.end() && it->second == "wood" && featuretype == Area)
+	{
+		StyleAttributes style;
+		style["polygon-fill"] = "#00aa00";
+
+		LayerDef layerDef;
+		layerDef.push_back(1);
+		layerDef.push_back(2);
+
+		styleDefOut.push_back(StyleAndLayerDef(layerDef, style));
+		return 1;
+	}
 
 	it = tags.find("building");
 	if(it != tags.end() && featuretype == Area)
 	{
 		StyleAttributes style;
-		style["polygon-fill"] = "#0000aa";
+		style["polygon-fill"] = "#aa7777";
 
 		LayerDef layerDef;
 		layerDef.push_back(1);
