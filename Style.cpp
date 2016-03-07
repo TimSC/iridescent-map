@@ -107,6 +107,34 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		return 1;
 	}
 
+	it = tags.find("natural");
+	if(it != tags.end() && it->second == "water" && featuretype == Area)
+	{
+		StyleAttributes style;
+		style["polygon-fill"] = "#0000ff";
+
+		LayerDef layerDef;
+		layerDef.push_back(1);
+		layerDef.push_back(2);
+
+		styleDefOut.push_back(StyleAndLayerDef(layerDef, style));
+		return 1;
+	}
+
+	it = tags.find("building");
+	if(it != tags.end() && featuretype == Area)
+	{
+		StyleAttributes style;
+		style["polygon-fill"] = "#0000aa";
+
+		LayerDef layerDef;
+		layerDef.push_back(1);
+		layerDef.push_back(3);
+
+		styleDefOut.push_back(StyleAndLayerDef(layerDef, style));
+		return 1;
+	}
+
 	it = tags.find("amenity");
 	if(it != tags.end() && featuretype == Poi && it->second == "pub")
 	{

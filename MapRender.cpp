@@ -116,8 +116,7 @@ void FeatureConverter::Convert(int zoom, class FeatureStore &featureStore, class
 	//Render polygons to draw tree
 	for(size_t i=0;i<featureStore.areas.size();i++)
 	{
-		std::vector<Polygon> polygons;
-		Contour outer;
+		Contours outers;
 		Contours inners;
 
 		class FeatureArea &area = featureStore.areas[i];
@@ -129,11 +128,30 @@ void FeatureConverter::Convert(int zoom, class FeatureStore &featureStore, class
 		std::vector<IdLatLonList> &outerShapes = area.outerShapes;
 		for(size_t j=0;j<outerShapes.size();j++)
 		{
+			Contour outer;
 			IdLatLonList &outerShape = outerShapes[j];
 			this->IdLatLonListsToContour(outerShape, transform, outer);
+			outers.push_back(outer);
 		}
-		Polygon polygon(outer, inners);
-		polygons.push_back(polygon);
+
+		std::vector<IdLatLonList> &innerShapes = area.innerShapes;
+		for(size_t j=0;j<innerShapes.size();j++)
+		{
+			Contour inner;
+			IdLatLonList &innerShape = innerShapes[j];
+			this->IdLatLonListsToContour(innerShape, transform, inner);
+			inners.push_back(inner);
+		}
+		
+		//This includes inner shapes in each outer way, which is probably ok for drawing
+		//purposes. Some inner ways will not even be within the other shape.
+
+		std::vector<Polygon> polygons;
+		for(size_t j=0; j<outers.size(); j++)
+		{
+			Polygon polygon(outers[j], inners);
+			polygons.push_back(polygon);
+		}
 
 		for(size_t j=0; j < shapesOutput.size(); j++)
 			shapesOutput[j]->OutArea(styleDef, polygons);
