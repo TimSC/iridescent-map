@@ -4,7 +4,7 @@
 #include <fstream>
 #include <stdexcept>
 using namespace std;
-const int READ_BUFF_SIZE = 1024*10;
+const int READ_BUFF_SIZE = 100;
 const int DECODE_BUFF_SIZE = 1024*10;
 
 std::string ConcatStr(const char *a, const char *b)
@@ -61,7 +61,7 @@ ostream& operator<<( ostream& os, const DecodeGzip& obj )
 		if(err != Z_OK)
 			throw runtime_error(ConcatStr("inflate failed: ", zError(err)));
 
-		output.append(outBuff, d_stream.total_out);
+		output.append(outBuff, DECODE_BUFF_SIZE - d_stream.avail_out);
 
 		if(obj.inStream.eof())
 			break;
@@ -74,10 +74,15 @@ ostream& operator<<( ostream& os, const DecodeGzip& obj )
 			break;
 	}
 
+	d_stream.avail_in = (uInt)0;
+	err = inflate(&d_stream, Z_FINISH);
+	if(err != Z_OK && err != Z_STREAM_END)
+		throw runtime_error(ConcatStr("inflate failed: ", zError(err)));
+	output.append(outBuff, DECODE_BUFF_SIZE - d_stream.avail_out);
+
 	err = inflateEnd(&d_stream);
 	if(err != Z_OK)
 		throw runtime_error(ConcatStr("inflateEnd failed: ", zError(err)));
-	output.append(outBuff, d_stream.total_out);
 
 	return os << output;
 }
