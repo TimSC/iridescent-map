@@ -7,7 +7,7 @@
 #include <string.h>
 using namespace std;
 const int READ_BUFF_SIZE = 1024*10;
-const int DECODE_BUFF_SIZE = 1024*10;
+const int DECODE_BUFF_SIZE = 1024*100;
 
 std::string ConcatStr(const char *a, const char *b)
 {
@@ -22,13 +22,14 @@ public:
 	char readBuff[READ_BUFF_SIZE];
 	char decodeBuff[DECODE_BUFF_SIZE];
 	streambuf &inStream;
+	std::iostream fs;
 
 	DecodeGzip(std::streambuf &inStream);
 	virtual ~DecodeGzip();
 	streamsize xsgetn (char* s, streamsize n);
 };
 
-DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream)
+DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStream)
 {
 
 }
@@ -41,7 +42,6 @@ DecodeGzip::~DecodeGzip()
 streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 {
 	string output;
-	std::iostream fs(&this->inStream);
 	fs.read(this->readBuff, READ_BUFF_SIZE);
 
 	z_stream d_stream;
@@ -50,6 +50,7 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 	d_stream.opaque = (voidpf)NULL;
 	d_stream.next_in  = (Bytef*)this->readBuff;
 	d_stream.avail_in = (uInt)fs.gcount();
+	//cout << "read " << d_stream.avail_in << endl;
 	int err = inflateInit2(&d_stream, 16+MAX_WBITS);
 	if(err != Z_OK)
 		throw runtime_error(ConcatStr("inflateInit2 failed: ", zError(err)));
@@ -71,6 +72,7 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 		fs.read(this->readBuff, READ_BUFF_SIZE);
 		d_stream.next_in  = (Bytef*)this->readBuff;
 		d_stream.avail_in = (uInt)fs.gcount();
+		//cout << "read " << d_stream.avail_in << endl;
 		if(d_stream.avail_in == 0)
 			break;
 	}
@@ -104,9 +106,6 @@ int main()
 	fb.open("test.txt.gz", std::ios::in);
 	class DecodeGzip decodeGzip(fb);
 
-	//char buff[READ_BUFF_SIZE];
-	//decodeGzip.read(buff, READ_BUFF_SIZE);
-	//cout << buff << endl;
 	Test(decodeGzip);
 }
 
