@@ -18,12 +18,14 @@ std::string ConcatStr(const char *a, const char *b)
 
 class DecodeGzip : public streambuf
 {
-public:
+protected:
 	char readBuff[READ_BUFF_SIZE];
 	char decodeBuff[DECODE_BUFF_SIZE];
 	streambuf &inStream;
 	std::iostream fs;
+	z_stream d_stream;
 
+public:
 	DecodeGzip(std::streambuf &inStream);
 	virtual ~DecodeGzip();
 	streamsize xsgetn (char* s, streamsize n);
@@ -31,20 +33,8 @@ public:
 
 DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStream)
 {
-
-}
-
-DecodeGzip::~DecodeGzip()
-{
-
-}
-
-streamsize DecodeGzip::xsgetn (char* s, streamsize n)
-{
-	string output;
 	fs.read(this->readBuff, READ_BUFF_SIZE);
 
-	z_stream d_stream;
 	d_stream.zalloc = (alloc_func)NULL;
 	d_stream.zfree = (free_func)NULL;
 	d_stream.opaque = (voidpf)NULL;
@@ -54,6 +44,18 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 	int err = inflateInit2(&d_stream, 16+MAX_WBITS);
 	if(err != Z_OK)
 		throw runtime_error(ConcatStr("inflateInit2 failed: ", zError(err)));
+
+}
+
+DecodeGzip::~DecodeGzip()
+{
+
+}
+
+streamsize DecodeGzip::xsgetn (char* s, streamsize n)
+{	
+	int err = Z_OK;
+	string output;
 
 	while(true)
 	{
