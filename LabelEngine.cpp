@@ -2,6 +2,42 @@
 #include <iostream>
 using namespace std;
 
+LabelDef::LabelDef()
+{
+
+}
+
+LabelDef::LabelDef(const class LabelRect &labelRect,
+		const class TextProperties &foregroundProp,
+		const class TextProperties &backgroundProp,
+		const std::vector<class TextLabel> &labels) : labelRect(labelRect),
+		foregroundProp(foregroundProp),
+		backgroundProp(backgroundProp),
+		labels(labels)
+{
+
+}
+
+LabelDef::LabelDef(const class LabelDef &a)
+{
+	*this = a;
+}
+
+LabelDef::~LabelDef()
+{
+
+}
+
+LabelDef& LabelDef::operator=(const LabelDef &arg)
+{
+	labelRect = arg.labelRect;
+	foregroundProp = arg.foregroundProp;
+	backgroundProp = arg.backgroundProp;
+	labels = arg.labels;
+}
+
+// **********************************************
+
 LabelRect::LabelRect() : x(0.0), y(0.0), w(1.0), h(1.0)
 {
 	
@@ -91,9 +127,9 @@ LabelEngine::~LabelEngine()
 
 }
 
-void LabelEngine::WriteDrawCommands()
+void LabelEngine::OrganiseLabels(OrganisedLabels &organisedLabelsOut)
 {
-	vector<class LabelRect> rects;
+	organisedLabelsOut.clear();
 
 	for(size_t i=0;i < this->poiLabels.size(); i++)
 	{
@@ -130,29 +166,50 @@ void LabelEngine::WriteDrawCommands()
 
 		bool foundOverlap = false;
 		class LabelRect labelRect(lx, ly, width, height);
-		for(size_t j=0; j<rects.size(); j++)
+		for(OrganisedLabels::iterator itr = organisedLabelsOut.begin(); itr != organisedLabelsOut.end(); itr++)
 		{
-			foundOverlap = labelRect.Overlaps(rects[j]);
-			if(foundOverlap) break;
+			vector<class LabelDef> &lbs = itr->second;
+			for(size_t j=0; j<lbs.size(); j++)
+			{
+				foundOverlap = labelRect.Overlaps(lbs[j].labelRect);
+				if(foundOverlap) break;
+			}
 		}
 		if(foundOverlap) continue;
 
-		//Ghost background
 		class TextProperties backgroundProp(0.0,0.0,0.0);
 		backgroundProp.a = 0.5;
 		backgroundProp.outline = true;
 		backgroundProp.lineWidth=2.0;
-		if(this->output != NULL)
-			this->output->AddDrawTextCmd(textStrs, backgroundProp);
 
-		//Foreground text
-		if(this->output != NULL)
-			this->output->AddDrawTextCmd(textStrs, foregroundProp);
-
-		//Add rect to list
-		rects.push_back(labelRect);
+		//Add label definition to list
+		OrganisedLabels::iterator it = organisedLabelsOut.find(0);
+		if(it == organisedLabelsOut.end())
+			organisedLabelsOut[0] = vector<class LabelDef>();
+		organisedLabelsOut[0].push_back(LabelDef(labelRect, foregroundProp, backgroundProp, textStrs));
 	}
 }
+
+void LabelEngine::WriteDrawCommands(const OrganisedLabels &organisedLabels)
+{
+	for(OrganisedLabels::const_iterator itr = organisedLabels.begin(); itr != organisedLabels.end(); itr++)
+	{
+		const vector<class LabelDef> &lbs = itr->second;
+		for(size_t j=0; j<lbs.size(); j++)
+		{
+			const class LabelDef &labelDef = lbs[j];
+
+			//Ghost background
+			if(this->output != NULL)
+				this->output->AddDrawTextCmd(labelDef.labels, labelDef.backgroundProp);
+
+			//Foreground text
+			if(this->output != NULL)
+				this->output->AddDrawTextCmd(labelDef.labels, labelDef.foregroundProp);
+		}
+	}
+}
+
 
 void LabelEngine::AddPolygonLabel(const std::vector<Polygon> &polygons, std::string &textName, const TagMap &tags)
 {

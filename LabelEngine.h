@@ -19,6 +19,26 @@ public:
 	void Print();
 };
 
+class LabelDef
+{
+public:
+	class LabelRect labelRect;
+	class TextProperties foregroundProp;
+	class TextProperties backgroundProp;
+	std::vector<class TextLabel> labels;
+
+	LabelDef();
+	LabelDef(const class LabelRect &labelRect,
+		const class TextProperties &foregroundProp,
+		const class TextProperties &backgroundProp,
+		const std::vector<class TextLabel> &labels);
+	LabelDef(const class LabelDef &a);
+	virtual ~LabelDef();
+	LabelDef& operator=(const LabelDef &arg);
+};
+
+typedef std::map<int, std::vector<class LabelDef> > OrganisedLabels;
+
 class PoiLabel
 {
 public:
@@ -44,7 +64,8 @@ public:
 	LabelEngine(class IDrawLib *output);
 	virtual ~LabelEngine();
 
-	void WriteDrawCommands();
+	void OrganiseLabels(OrganisedLabels &organisedLabelsOut);
+	void WriteDrawCommands(const OrganisedLabels &organisedLabels);
 
 	void AddPolygonLabel(const std::vector<Polygon> &polygons, std::string &textName, const TagMap &tags);
 	void AddLineLabel(const Contour &line, std::string &textName, const TagMap &tags);

@@ -393,7 +393,9 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransf
 	//Interate through draw tree to produce ordered draw commands
 	drawTree.WriteDrawCommands(this->output);
 
-	labelEngine.WriteDrawCommands();
+	OrganisedLabels organisedLabels;
+	labelEngine.OrganiseLabels(organisedLabels);
+	labelEngine.WriteDrawCommands(organisedLabels);
 
 	this->output->Draw();
 }
