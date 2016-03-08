@@ -3,15 +3,20 @@
 #include "Regrouper.h"
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include "drawlib/drawlibcairo.h"
 #include "MapRender.h"
 using namespace std;
 
-int main()
+void ReadInput(int zoom, int xtile, int ytile, cairo_surface_t *surface)
 {
-	std::ifstream fi("1374.o5m");
+	stringstream finaStr;
+	finaStr << xtile << "/" << ytile << ".o5m.gz";
+	string fina = finaStr.str();
+	cout << fina << endl;
+	std::ifstream fi(fina.c_str());
 
-	class SlippyTilesTransform slippyTilesTransform(12, 2035, 1374);
+	class SlippyTilesTransform slippyTilesTransform(zoom, xtile, ytile);
 
 	class Regrouper regrouper;
 
@@ -32,12 +37,18 @@ int main()
 	regrouper.FindLines(&featureStore);
 	regrouper.FindPois(&featureStore);
 	
-	cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 640, 640);
 	class DrawLibCairoPango drawlib(surface);
 	
 	class MapRender mapRender(&drawlib);
 	
-	mapRender.Render(12, featureStore, slippyTilesTransform);
+	mapRender.Render(zoom, featureStore, slippyTilesTransform);
+}
+
+int main()
+{
+	cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 640, 640);
+
+	ReadInput(12, 2035, 1374, surface);
 
 	cairo_surface_write_to_png(surface, "image.png");	
 	cairo_surface_destroy(surface);
