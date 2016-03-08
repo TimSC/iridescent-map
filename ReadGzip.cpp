@@ -7,7 +7,7 @@
 #include <string.h>
 using namespace std;
 const int READ_BUFF_SIZE = 1024*10;
-const int DECODE_BUFF_SIZE = 1024*100;
+const int DECODE_BUFF_SIZE = 1024*128;
 
 std::string ConcatStr(const char *a, const char *b)
 {
@@ -25,6 +25,9 @@ protected:
 	std::iostream fs;
 	z_stream d_stream;
 	bool fileReadPending;
+	std::string outBuff;
+
+	streamsize ReturnDataFromOutBuff(char* s, streamsize n);
 
 public:
 	DecodeGzip(std::streambuf &inStream);
@@ -54,9 +57,21 @@ DecodeGzip::~DecodeGzip()
 
 }
 
+streamsize DecodeGzip::ReturnDataFromOutBuff(char* s, streamsize n)
+{
+	int lenToCopy = outBuff.size();
+	if(n < lenToCopy) lenToCopy = n;
+	strncpy(s, outBuff.c_str(), lenToCopy);
+	outBuff = outBuff.substr(lenToCopy);
+	return lenToCopy;
+}
+
 streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 {	
 	int err = Z_OK;
+
+	if(outBuff.size() > 0)
+		return ReturnDataFromOutBuff(s, n);
 
 	if(fileReadPending)
 	{
@@ -83,9 +98,8 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 				throw runtime_error(ConcatStr("inflate failed: ", zError(err)));
 
 			size_t outLen = DECODE_BUFF_SIZE - d_stream.avail_out;
-			if(n < outLen) outLen = n;
-			strncpy(s, this->decodeBuff, outLen);
-			return outLen;
+			outBuff.append(decodeBuff, outLen);
+			return ReturnDataFromOutBuff(s, n);
 		}
 	}
 
@@ -99,34 +113,36 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 		throw runtime_error(ConcatStr("inflateEnd failed: ", zError(err)));
 	
 	size_t outLen = DECODE_BUFF_SIZE - d_stream.avail_out;
-	if(n < outLen) outLen = n;
-	strncpy(s, this->decodeBuff, outLen);
-	return outLen;
+	outBuff.append(decodeBuff, outLen);
+	return ReturnDataFromOutBuff(s, n);
 }
 
 streamsize DecodeGzip::showmanyc()
 {
 	if(!fileReadPending)
 		return 1;
+	if(outBuff.size() > 0)
+		return 1;
 	return inStream.in_avail() > 1;
 }
 
 void Test(streambuf &st)
 {
-	int testBuffSize = READ_BUFF_SIZE;
+	int testBuffSize = 200;
 	char buff[testBuffSize];
 	while(st.in_avail()>0)
 	{
 		int len = st.sgetn(buff, testBuffSize-1);
 		buff[len] = '\0';
-		cout << buff << endl;
+		cout << buff;
 	}
+	
 }
 
 int main()
 {
 	std::filebuf fb;
-	fb.open("test.txt.gz", std::ios::in);
+	fb.open("test2.txt.gz", std::ios::in);
 	class DecodeGzip decodeGzip(fb);
 
 	Test(decodeGzip);
