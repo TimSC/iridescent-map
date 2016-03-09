@@ -119,10 +119,6 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 		}
 	}
 
-	err = inflate(&d_stream, Z_FINISH);
-	if(err != Z_OK && err != Z_STREAM_END)
-		throw runtime_error(ConcatStr("inflate failed: ", zError(err)));
-
 	err = inflateEnd(&d_stream);
 	if(err != Z_OK)
 		throw runtime_error(ConcatStr("inflateEnd failed: ", zError(err)));	
@@ -133,7 +129,8 @@ streamsize DecodeGzip::showmanyc()
 {
 	if(d_stream.avail_in > 0)
 		return 1;
-	if(decodeBufferSize - d_stream.avail_out > 0)
+	int lengthInBuff = (char *)d_stream.next_out - outCursor;
+	if(lengthInBuff > 0)
 		return 1;
 	return inStream.in_avail() > 1;
 }
@@ -156,7 +153,7 @@ void Test(streambuf &st)
 int main()
 {
 	std::filebuf fb;
-	fb.open("test.txt.gz", std::ios::in);
+	fb.open("test2.txt.gz", std::ios::in);
 	class DecodeGzip decodeGzip(fb);
 
 	Test(decodeGzip);
