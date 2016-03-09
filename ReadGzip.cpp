@@ -7,8 +7,8 @@
 #include <sstream>
 #include <string.h>
 using namespace std;
-const int READ_BUFF_SIZE = 1024*10;
-const int DECODE_BUFF_SIZE = 1024*128;
+const size_t READ_BUFF_SIZE = 1024*128;
+const size_t DECODE_BUFF_SIZE = 1024*128;
 
 std::string ConcatStr(const char *a, const char *b)
 {
@@ -20,25 +20,37 @@ std::string ConcatStr(const char *a, const char *b)
 class DecodeGzip : public streambuf
 {
 protected:
-	char readBuff[READ_BUFF_SIZE];
-	char decodeBuff[DECODE_BUFF_SIZE];
+	char *readBuff;
+	char *decodeBuff;
 	streambuf &inStream;
 	std::iostream fs;
 	z_stream d_stream;
 	char *outCursor;
+	size_t readBufferSize;
+	size_t decodeBufferSize;
 
 	streamsize ReturnDataFromOutBuff(char* s, streamsize n);
 
 public:
-	DecodeGzip(std::streambuf &inStream);
+	DecodeGzip(std::streambuf &inStream, 
+		size_t readBufferSize = READ_BUFF_SIZE, 
+		size_t decodeBufferSize = DECODE_BUFF_SIZE);
 	virtual ~DecodeGzip();
 	streamsize xsgetn (char* s, streamsize n);
 	streamsize showmanyc();
 };
 
-DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStream)
+DecodeGzip::DecodeGzip(std::streambuf &inStream, 
+		size_t readBufferSize, 
+		size_t decodeBufferSize) : inStream(inStream), 
+			fs(&inStream),
+			readBufferSize(readBufferSize),
+			decodeBufferSize(decodeBufferSize)
 {
-	fs.read(this->readBuff, READ_BUFF_SIZE);
+	this->readBuff = new char [readBufferSize];
+	this->decodeBuff = new char [decodeBufferSize];
+
+	fs.read(this->readBuff, readBufferSize);
 
 	d_stream.zalloc = (alloc_func)NULL;
 	d_stream.zfree = (free_func)NULL;
@@ -46,7 +58,7 @@ DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStr
 	d_stream.next_in  = (Bytef*)this->readBuff;
 	d_stream.avail_in = (uInt)fs.gcount();
 	d_stream.next_out = (Bytef*)this->decodeBuff;
-	d_stream.avail_out = (uInt)DECODE_BUFF_SIZE;
+	d_stream.avail_out = (uInt)decodeBufferSize;
 	outCursor = this->decodeBuff;
 
 	//cout << "read " << d_stream.avail_in << endl;
@@ -58,7 +70,8 @@ DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStr
 
 DecodeGzip::~DecodeGzip()
 {
-
+	delete [] this->readBuff;
+	delete [] this->decodeBuff;
 }
 
 streamsize DecodeGzip::ReturnDataFromOutBuff(char* s, streamsize n)
@@ -73,7 +86,7 @@ streamsize DecodeGzip::ReturnDataFromOutBuff(char* s, streamsize n)
 	{
 		//Clear buffer
 		d_stream.next_out = (Bytef*)this->decodeBuff;
-		d_stream.avail_out = (uInt)DECODE_BUFF_SIZE;
+		d_stream.avail_out = (uInt)decodeBufferSize;
 		outCursor = this->decodeBuff;
 	}
 	return lenToCopy;
@@ -83,12 +96,12 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 {	
 	int err = Z_OK;
 
-	if(d_stream.avail_out < DECODE_BUFF_SIZE)
+	if(d_stream.avail_out < decodeBufferSize)
 		return ReturnDataFromOutBuff(s, n);
 
 	if(d_stream.avail_in == 0 && !fs.eof())
 	{
-		fs.read(this->readBuff, READ_BUFF_SIZE);
+		fs.read(this->readBuff, readBufferSize);
 		d_stream.next_in  = (Bytef*)this->readBuff;
 		d_stream.avail_in = (uInt)fs.gcount();
 		//cout << "read " << d_stream.avail_in << endl;
@@ -120,7 +133,7 @@ streamsize DecodeGzip::showmanyc()
 {
 	if(d_stream.avail_in > 0)
 		return 1;
-	if(DECODE_BUFF_SIZE - d_stream.avail_out > 0)
+	if(decodeBufferSize - d_stream.avail_out > 0)
 		return 1;
 	return inStream.in_avail() > 1;
 }
@@ -143,7 +156,7 @@ void Test(streambuf &st)
 int main()
 {
 	std::filebuf fb;
-	fb.open("test2.txt.gz", std::ios::in);
+	fb.open("test.txt.gz", std::ios::in);
 	class DecodeGzip decodeGzip(fb);
 
 	Test(decodeGzip);
