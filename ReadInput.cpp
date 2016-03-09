@@ -6,6 +6,7 @@
 #include <sstream>
 #include "drawlib/drawlibcairo.h"
 #include "MapRender.h"
+#include "ReadGzip.h"
 using namespace std;
 
 void ReadInput(int zoom, int xtile, int ytile, cairo_surface_t *surface)

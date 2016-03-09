@@ -1,14 +1,11 @@
-//Decoding gzip streams in C++ based on a streambuf based class
-//g++ ReadGzip.cpp -lz -o readgzip
-#include <zlib.h>
+
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
 #include <sstream>
 #include <string.h>
+#include "ReadGzip.h"
 using namespace std;
-const size_t READ_BUFF_SIZE = 1024*128;
-const size_t DECODE_BUFF_SIZE = 1024*128;
 
 std::string ConcatStr(const char *a, const char *b)
 {
@@ -16,29 +13,6 @@ std::string ConcatStr(const char *a, const char *b)
 	out.append(b);
 	return out;
 }
-
-class DecodeGzip : public streambuf
-{
-protected:
-	char *readBuff;
-	char *decodeBuff;
-	streambuf &inStream;
-	std::iostream fs;
-	z_stream d_stream;
-	char *outCursor;
-	size_t readBufferSize;
-	size_t decodeBufferSize;
-
-	streamsize ReturnDataFromOutBuff(char* s, streamsize n);
-
-public:
-	DecodeGzip(std::streambuf &inStream, 
-		size_t readBufferSize = READ_BUFF_SIZE, 
-		size_t decodeBufferSize = DECODE_BUFF_SIZE);
-	virtual ~DecodeGzip();
-	streamsize xsgetn (char* s, streamsize n);
-	streamsize showmanyc();
-};
 
 DecodeGzip::DecodeGzip(std::streambuf &inStream, 
 		size_t readBufferSize, 
@@ -133,29 +107,5 @@ streamsize DecodeGzip::showmanyc()
 	if(lengthInBuff > 0)
 		return 1;
 	return inStream.in_avail() > 1;
-}
-
-void Test(streambuf &st)
-{
-	int testBuffSize = 200;
-	char buff[testBuffSize];
-	ofstream testOut("testout.txt");
-	while(st.in_avail()>0)
-	{
-		int len = st.sgetn(buff, testBuffSize-1);
-		buff[len] = '\0';
-		cout << buff;
-		testOut << buff;
-	}
-	testOut.flush();
-}
-
-int main()
-{
-	std::filebuf fb;
-	fb.open("test2.txt.gz", std::ios::in);
-	class DecodeGzip decodeGzip(fb);
-
-	Test(decodeGzip);
 }
 
