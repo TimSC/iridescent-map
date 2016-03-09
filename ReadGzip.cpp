@@ -39,11 +39,19 @@ DecodeGzip::~DecodeGzip()
 
 }
 
+void DecodeGzip::CopyToOutputBuffer()
+{
+	size_t outLen = DECODE_BUFF_SIZE - d_stream.avail_out;
+	outBuff.append(decodeBuff, outLen);
+	d_stream.next_out = (Bytef*)this->decodeBuff;
+	d_stream.avail_out = (uInt)DECODE_BUFF_SIZE;
+}
+
 streamsize DecodeGzip::ReturnDataFromOutBuff(char* s, streamsize n)
 {
 	int lenToCopy = outBuff.size();
 	if(n < lenToCopy) lenToCopy = n;
-	strncpy(s, outBuff.c_str(), lenToCopy);
+	memcpy(s, outBuff.c_str(), lenToCopy);
 	if(lenToCopy > 0)
 		outBuff = std::string(&outBuff[lenToCopy], outBuff.size()-lenToCopy);
 	return lenToCopy;
@@ -73,10 +81,7 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 			if(err != Z_OK)
 				throw runtime_error(ConcatStr("inflate failed: ", zError(err)));
 
-			size_t outLen = DECODE_BUFF_SIZE - d_stream.avail_out;
-			outBuff.append(decodeBuff, outLen);
-			d_stream.next_out = (Bytef*)this->decodeBuff;
-			d_stream.avail_out = (uInt)DECODE_BUFF_SIZE;
+			CopyToOutputBuffer();
 			return ReturnDataFromOutBuff(s, n);
 		}
 	}
@@ -89,10 +94,7 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 	if(err != Z_OK)
 		throw runtime_error(ConcatStr("inflateEnd failed: ", zError(err)));
 	
-	size_t outLen = DECODE_BUFF_SIZE - d_stream.avail_out;
-	outBuff.append(decodeBuff, outLen);
-	d_stream.next_out = (Bytef*)this->decodeBuff;
-	d_stream.avail_out = (uInt)DECODE_BUFF_SIZE;
+	CopyToOutputBuffer();
 	return ReturnDataFromOutBuff(s, n);
 }
 
