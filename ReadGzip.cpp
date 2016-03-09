@@ -77,17 +77,12 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 	if(outBuff.size() > 0)
 		return ReturnDataFromOutBuff(s, n);
 
-	if(d_stream.avail_in == 0)
+	if(d_stream.avail_in == 0 && !fs.eof())
 	{
-		if(fs.eof())
-			d_stream.avail_in = 0;
-		else
-		{
-			fs.read(this->readBuff, READ_BUFF_SIZE);
-			d_stream.next_in  = (Bytef*)this->readBuff;
-			d_stream.avail_in = (uInt)fs.gcount();
-			//cout << "read " << d_stream.avail_in << endl;
-		}
+		fs.read(this->readBuff, READ_BUFF_SIZE);
+		d_stream.next_in  = (Bytef*)this->readBuff;
+		d_stream.avail_in = (uInt)fs.gcount();
+		//cout << "read " << d_stream.avail_in << endl;
 	}
 
 	if(d_stream.avail_in > 0)
@@ -124,6 +119,8 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 
 streamsize DecodeGzip::showmanyc()
 {
+	if(d_stream.avail_in > 0)
+		return 1;
 	if(outBuff.size() > 0)
 		return 1;
 	return inStream.in_avail() > 1;
@@ -147,7 +144,7 @@ void Test(streambuf &st)
 int main()
 {
 	std::filebuf fb;
-	fb.open("test2.txt.gz", std::ios::in);
+	fb.open("test.txt.gz", std::ios::in);
 	class DecodeGzip decodeGzip(fb);
 
 	Test(decodeGzip);
