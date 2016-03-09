@@ -54,7 +54,7 @@ streamsize DecodeGzip::ReturnDataFromOutBuff(char* s, streamsize n)
 	int lenToCopy = lengthInBuff;
 	if(n < lenToCopy) lenToCopy = n;
 	
-	strncpy(s, outCursor, lenToCopy);
+	memcpy(s, outCursor, lenToCopy);
 	outCursor += lenToCopy;
 	if(lengthInBuff == lenToCopy)
 	{
@@ -97,6 +97,15 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 	if(err != Z_OK)
 		throw runtime_error(ConcatStr("inflateEnd failed: ", zError(err)));	
 	return ReturnDataFromOutBuff(s, n);
+}
+
+int DecodeGzip::uflow()
+{
+	streamsize inputReady = showmanyc();
+	if(inputReady==0) return EOF;
+	char buff[1];
+	xsgetn(buff, 1);
+	return *(unsigned char *)&(buff[0]);
 }
 
 streamsize DecodeGzip::showmanyc()

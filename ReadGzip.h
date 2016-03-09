@@ -25,6 +25,7 @@ public:
 		size_t decodeBufferSize = 1024*128);
 	virtual ~DecodeGzip();
 	std::streamsize xsgetn (char* s, std::streamsize n);
+	int uflow();
 	std::streamsize showmanyc();
 };
 
