@@ -25,7 +25,7 @@ protected:
 	streambuf &inStream;
 	std::iostream fs;
 	z_stream d_stream;
-	std::string outBuff;
+	char *outCursor;
 
 	streamsize ReturnDataFromOutBuff(char* s, streamsize n);
 
@@ -47,6 +47,7 @@ DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStr
 	d_stream.avail_in = (uInt)fs.gcount();
 	d_stream.next_out = (Bytef*)this->decodeBuff;
 	d_stream.avail_out = (uInt)DECODE_BUFF_SIZE;
+	outCursor = this->decodeBuff;
 
 	//cout << "read " << d_stream.avail_in << endl;
 	int err = inflateInit2(&d_stream, 16+MAX_WBITS);
@@ -62,11 +63,19 @@ DecodeGzip::~DecodeGzip()
 
 streamsize DecodeGzip::ReturnDataFromOutBuff(char* s, streamsize n)
 {
-	int lenToCopy = outBuff.size();
+	int lengthInBuff = (char *)d_stream.next_out - outCursor;
+	int lenToCopy = lengthInBuff;
 	if(n < lenToCopy) lenToCopy = n;
-	strncpy(s, outBuff.c_str(), lenToCopy);
-	if(lenToCopy > 0)
-		outBuff = std::string(&outBuff[lenToCopy], outBuff.size()-lenToCopy);
+	
+	strncpy(s, outCursor, lenToCopy);
+	outCursor += lenToCopy;
+	if(lengthInBuff == lenToCopy)
+	{
+		//Clear buffer
+		d_stream.next_out = (Bytef*)this->decodeBuff;
+		d_stream.avail_out = (uInt)DECODE_BUFF_SIZE;
+		outCursor = this->decodeBuff;
+	}
 	return lenToCopy;
 }
 
@@ -74,7 +83,7 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 {	
 	int err = Z_OK;
 
-	if(outBuff.size() > 0)
+	if(d_stream.avail_out < DECODE_BUFF_SIZE)
 		return ReturnDataFromOutBuff(s, n);
 
 	if(d_stream.avail_in == 0 && !fs.eof())
@@ -93,11 +102,6 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 		{
 			if(err != Z_OK)
 				throw runtime_error(ConcatStr("inflate failed: ", zError(err)));
-
-			size_t outLen = DECODE_BUFF_SIZE - d_stream.avail_out;
-			outBuff.append(decodeBuff, outLen);
-			d_stream.next_out = (Bytef*)this->decodeBuff;
-			d_stream.avail_out = (uInt)DECODE_BUFF_SIZE;
 			return ReturnDataFromOutBuff(s, n);
 		}
 	}
@@ -108,12 +112,7 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 
 	err = inflateEnd(&d_stream);
 	if(err != Z_OK)
-		throw runtime_error(ConcatStr("inflateEnd failed: ", zError(err)));
-	
-	size_t outLen = DECODE_BUFF_SIZE - d_stream.avail_out;
-	outBuff.append(decodeBuff, outLen);
-	d_stream.next_out = (Bytef*)this->decodeBuff;
-	d_stream.avail_out = (uInt)DECODE_BUFF_SIZE;
+		throw runtime_error(ConcatStr("inflateEnd failed: ", zError(err)));	
 	return ReturnDataFromOutBuff(s, n);
 }
 
@@ -121,8 +120,32 @@ streamsize DecodeGzip::showmanyc()
 {
 	if(d_stream.avail_in > 0)
 		return 1;
-	if(outBuff.size() > 0)
+	if(DECODE_BUFF_SIZE - d_stream.avail_out > 0)
 		return 1;
 	return inStream.in_avail() > 1;
+}
+
+void Test(streambuf &st)
+{
+	int testBuffSize = 200;
+	char buff[testBuffSize];
+	ofstream testOut("testout.txt");
+	while(st.in_avail()>0)
+	{
+		int len = st.sgetn(buff, testBuffSize-1);
+		buff[len] = '\0';
+		cout << buff;
+		testOut << buff;
+	}
+	testOut.flush();
+}
+
+int main()
+{
+	std::filebuf fb;
+	fb.open("test2.txt.gz", std::ios::in);
+	class DecodeGzip decodeGzip(fb);
+
+	Test(decodeGzip);
 }
 
