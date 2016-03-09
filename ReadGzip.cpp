@@ -16,7 +16,7 @@ std::string ConcatStr(const char *a, const char *b)
 }
 
 
-DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStream)
+DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStream), decodeDone(false)
 {
 	fs.read(this->readBuff, READ_BUFF_SIZE);
 
@@ -32,11 +32,6 @@ DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStr
 	int err = inflateInit2(&d_stream, 16+MAX_WBITS);
 	if(err != Z_OK)
 		throw runtime_error(ConcatStr("inflateInit2 failed: ", zError(err)));
-
-	bool d = false;
-	while(!d)
-		d = Decode();
-
 }
 
 bool DecodeGzip::Decode()
@@ -76,6 +71,7 @@ bool DecodeGzip::Decode()
 		throw runtime_error(ConcatStr("inflateEnd failed: ", zError(err)));
 	
 	CopyToOutputBuffer();
+	decodeDone = true;
 	return true;
 }
 
@@ -106,9 +102,8 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 {	
 	int err = Z_OK;
 
-	if(outBuff.size() > 0)
-		return ReturnDataFromOutBuff(s, n);
-
+	while(!decodeDone && this->outBuff.size() < n)
+		Decode();
 
 	return ReturnDataFromOutBuff(s, n);
 }

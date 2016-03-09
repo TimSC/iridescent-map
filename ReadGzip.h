@@ -16,6 +16,7 @@ protected:
 	std::iostream fs;
 	z_stream d_stream;
 	std::string outBuff;
+	bool decodeDone;
 
 	bool Decode();
 	void CopyToOutputBuffer();
