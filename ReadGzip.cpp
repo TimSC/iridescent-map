@@ -1,3 +1,4 @@
+//Decoding gzip streams in C++ based on a streambuf based class
 //g++ ReadGzip.cpp -lz -o readgzip
 #include <zlib.h>
 #include <iostream>
@@ -7,7 +8,7 @@
 #include <string.h>
 using namespace std;
 const int READ_BUFF_SIZE = 1024*10;
-const int DECODE_BUFF_SIZE = 1024*128;
+const int DECODE_BUFF_SIZE = 1024*5;
 
 std::string ConcatStr(const char *a, const char *b)
 {
@@ -24,7 +25,6 @@ protected:
 	streambuf &inStream;
 	std::iostream fs;
 	z_stream d_stream;
-	bool fileReadPending;
 	std::string outBuff;
 
 	streamsize ReturnDataFromOutBuff(char* s, streamsize n);
@@ -36,7 +36,7 @@ public:
 	streamsize showmanyc();
 };
 
-DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStream), fileReadPending(false)
+DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStream)
 {
 	fs.read(this->readBuff, READ_BUFF_SIZE);
 
@@ -45,6 +45,9 @@ DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStr
 	d_stream.opaque = (voidpf)NULL;
 	d_stream.next_in  = (Bytef*)this->readBuff;
 	d_stream.avail_in = (uInt)fs.gcount();
+	d_stream.next_out = (Bytef*)this->decodeBuff;
+	d_stream.avail_out = (uInt)DECODE_BUFF_SIZE;
+
 	//cout << "read " << d_stream.avail_in << endl;
 	int err = inflateInit2(&d_stream, 16+MAX_WBITS);
 	if(err != Z_OK)
@@ -74,7 +77,7 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 	if(outBuff.size() > 0)
 		return ReturnDataFromOutBuff(s, n);
 
-	if(fileReadPending)
+	if(d_stream.avail_in == 0)
 	{
 		if(fs.eof())
 			d_stream.avail_in = 0;
@@ -89,10 +92,8 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 
 	if(d_stream.avail_in > 0)
 	{
-		d_stream.next_out = (Bytef*)this->decodeBuff;
-		d_stream.avail_out = (uInt)DECODE_BUFF_SIZE;
 		err = inflate(&d_stream, Z_NO_FLUSH);
-		fileReadPending = true;
+
 		if (err != Z_STREAM_END)
 		{
 			if(err != Z_OK)
@@ -100,11 +101,12 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 
 			size_t outLen = DECODE_BUFF_SIZE - d_stream.avail_out;
 			outBuff.append(decodeBuff, outLen);
+			d_stream.next_out = (Bytef*)this->decodeBuff;
+			d_stream.avail_out = (uInt)DECODE_BUFF_SIZE;
 			return ReturnDataFromOutBuff(s, n);
 		}
 	}
 
-	d_stream.avail_in = (uInt)0;
 	err = inflate(&d_stream, Z_FINISH);
 	if(err != Z_OK && err != Z_STREAM_END)
 		throw runtime_error(ConcatStr("inflate failed: ", zError(err)));
@@ -115,13 +117,13 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 	
 	size_t outLen = DECODE_BUFF_SIZE - d_stream.avail_out;
 	outBuff.append(decodeBuff, outLen);
+	d_stream.next_out = (Bytef*)this->decodeBuff;
+	d_stream.avail_out = (uInt)DECODE_BUFF_SIZE;
 	return ReturnDataFromOutBuff(s, n);
 }
 
 streamsize DecodeGzip::showmanyc()
 {
-	if(!fileReadPending)
-		return 1;
 	if(outBuff.size() > 0)
 		return 1;
 	return inStream.in_avail() > 1;
@@ -145,7 +147,7 @@ void Test(streambuf &st)
 int main()
 {
 	std::filebuf fb;
-	fb.open("test.txt.gz", std::ios::in);
+	fb.open("test2.txt.gz", std::ios::in);
 	class DecodeGzip decodeGzip(fb);
 
 	Test(decodeGzip);
