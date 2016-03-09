@@ -32,6 +32,43 @@ DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStr
 	if(err != Z_OK)
 		throw runtime_error(ConcatStr("inflateInit2 failed: ", zError(err)));
 
+	bool loop = true;
+	while(loop)
+	{
+		if(d_stream.avail_in == 0 && !fs.eof())
+		{
+			fs.read(this->readBuff, READ_BUFF_SIZE);
+			d_stream.next_in  = (Bytef*)this->readBuff;
+			d_stream.avail_in = (uInt)fs.gcount();
+			//cout << "read " << d_stream.avail_in << endl;
+		}
+
+		loop = false;
+		if(d_stream.avail_in > 0)
+		{
+			err = inflate(&d_stream, Z_NO_FLUSH);
+
+			if (err != Z_STREAM_END)
+			{
+				if(err != Z_OK)
+					throw runtime_error(ConcatStr("inflate failed: ", zError(err)));
+
+				CopyToOutputBuffer();
+				loop = true;
+			}
+		}
+	}
+
+	err = inflate(&d_stream, Z_FINISH);
+	if(err != Z_OK && err != Z_STREAM_END)
+		throw runtime_error(ConcatStr("inflate failed: ", zError(err)));
+
+	err = inflateEnd(&d_stream);
+	if(err != Z_OK)
+		throw runtime_error(ConcatStr("inflateEnd failed: ", zError(err)));
+	
+	CopyToOutputBuffer();
+
 }
 
 DecodeGzip::~DecodeGzip()
@@ -64,37 +101,7 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 	if(outBuff.size() > 0)
 		return ReturnDataFromOutBuff(s, n);
 
-	if(d_stream.avail_in == 0 && !fs.eof())
-	{
-		fs.read(this->readBuff, READ_BUFF_SIZE);
-		d_stream.next_in  = (Bytef*)this->readBuff;
-		d_stream.avail_in = (uInt)fs.gcount();
-		//cout << "read " << d_stream.avail_in << endl;
-	}
 
-	if(d_stream.avail_in > 0)
-	{
-		err = inflate(&d_stream, Z_NO_FLUSH);
-
-		if (err != Z_STREAM_END)
-		{
-			if(err != Z_OK)
-				throw runtime_error(ConcatStr("inflate failed: ", zError(err)));
-
-			CopyToOutputBuffer();
-			return ReturnDataFromOutBuff(s, n);
-		}
-	}
-
-	err = inflate(&d_stream, Z_FINISH);
-	if(err != Z_OK && err != Z_STREAM_END)
-		throw runtime_error(ConcatStr("inflate failed: ", zError(err)));
-
-	err = inflateEnd(&d_stream);
-	if(err != Z_OK)
-		throw runtime_error(ConcatStr("inflateEnd failed: ", zError(err)));
-	
-	CopyToOutputBuffer();
 	return ReturnDataFromOutBuff(s, n);
 }
 
