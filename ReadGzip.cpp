@@ -3,6 +3,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <sstream>
+#include <stdlib.h>
 #include <string.h>
 #include "ReadGzip.h"
 using namespace std;
@@ -32,7 +33,10 @@ DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStr
 	if(err != Z_OK)
 		throw runtime_error(ConcatStr("inflateInit2 failed: ", zError(err)));
 
-	Decode();
+	bool d = false;
+	while(!d)
+		d = Decode();
+
 }
 
 bool DecodeGzip::Decode()
@@ -58,6 +62,7 @@ bool DecodeGzip::Decode()
 					throw runtime_error(ConcatStr("inflate failed: ", zError(err)));
 
 				CopyToOutputBuffer();
+				return false;
 			}
 		}
 	}
