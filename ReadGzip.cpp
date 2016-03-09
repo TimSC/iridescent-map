@@ -8,7 +8,7 @@
 #include <string.h>
 using namespace std;
 const int READ_BUFF_SIZE = 1024*10;
-const int DECODE_BUFF_SIZE = 1024*5;
+const int DECODE_BUFF_SIZE = 1024*128;
 
 std::string ConcatStr(const char *a, const char *b)
 {
@@ -124,29 +124,5 @@ streamsize DecodeGzip::showmanyc()
 	if(outBuff.size() > 0)
 		return 1;
 	return inStream.in_avail() > 1;
-}
-
-void Test(streambuf &st)
-{
-	int testBuffSize = 200;
-	char buff[testBuffSize];
-	ofstream testOut("testout.txt");
-	while(st.in_avail()>0)
-	{
-		int len = st.sgetn(buff, testBuffSize-1);
-		buff[len] = '\0';
-		cout << buff;
-		testOut << buff;
-	}
-	testOut.flush();
-}
-
-int main()
-{
-	std::filebuf fb;
-	fb.open("test.txt.gz", std::ios::in);
-	class DecodeGzip decodeGzip(fb);
-
-	Test(decodeGzip);
 }
 
