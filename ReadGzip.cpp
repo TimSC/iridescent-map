@@ -32,8 +32,13 @@ DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStr
 	if(err != Z_OK)
 		throw runtime_error(ConcatStr("inflateInit2 failed: ", zError(err)));
 
-	bool loop = true;
-	while(loop)
+	Decode();
+}
+
+bool DecodeGzip::Decode()
+{
+	int err = Z_OK;
+	while(!fs.eof())
 	{
 		if(d_stream.avail_in == 0 && !fs.eof())
 		{
@@ -43,7 +48,6 @@ DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStr
 			//cout << "read " << d_stream.avail_in << endl;
 		}
 
-		loop = false;
 		if(d_stream.avail_in > 0)
 		{
 			err = inflate(&d_stream, Z_NO_FLUSH);
@@ -54,7 +58,6 @@ DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStr
 					throw runtime_error(ConcatStr("inflate failed: ", zError(err)));
 
 				CopyToOutputBuffer();
-				loop = true;
 			}
 		}
 	}
@@ -68,7 +71,7 @@ DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStr
 		throw runtime_error(ConcatStr("inflateEnd failed: ", zError(err)));
 	
 	CopyToOutputBuffer();
-
+	return true;
 }
 
 DecodeGzip::~DecodeGzip()

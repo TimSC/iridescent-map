@@ -17,6 +17,7 @@ protected:
 	z_stream d_stream;
 	std::string outBuff;
 
+	bool Decode();
 	void CopyToOutputBuffer();
 	std::streamsize ReturnDataFromOutBuff(char* s, std::streamsize n);
 
