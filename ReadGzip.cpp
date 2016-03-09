@@ -108,6 +108,15 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 	return ReturnDataFromOutBuff(s, n);
 }
 
+int DecodeGzip::uflow()
+{
+	streamsize inputReady = showmanyc();
+	if(inputReady==0) return EOF;
+	char buff[1];
+	xsgetn(buff, 1);
+	return *(unsigned char *)&(buff[0]);
+}
+
 streamsize DecodeGzip::showmanyc()
 {
 	if(d_stream.avail_in > 0)

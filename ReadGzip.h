@@ -19,6 +19,7 @@ protected:
 	bool decodeDone;
 
 	bool Decode();
+	int uflow();
 	void CopyToOutputBuffer();
 	std::streamsize ReturnDataFromOutBuff(char* s, std::streamsize n);
 

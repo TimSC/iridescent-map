@@ -11,17 +11,17 @@ using namespace std;
 
 void ReadInput(int zoom, int xtile, int ytile, cairo_surface_t *surface)
 {
-	/*stringstream finaStr;
+	stringstream finaStr;
 	finaStr << xtile << "/" << ytile << ".o5m.gz";
 	string fina = finaStr.str();
 	cout << fina << endl;
 	std::filebuf fi;
 	fi.open(fina.c_str(), std::ios::in);
 
-	class DecodeGzip fiDec(fi);*/
+	class DecodeGzip fiDec(fi);
 
-	std::filebuf fiDec;
-	fiDec.open("1374.o5m", std::ios::in);
+	//std::filebuf fiDec;
+	//fiDec.open("1374.o5m", std::ios::in);
 
 	class SlippyTilesTransform slippyTilesTransform(zoom, xtile, ytile);
 
