@@ -112,6 +112,8 @@ int DecodeGzip::uflow()
 
 streamsize DecodeGzip::showmanyc()
 {
+	if(this->outputBuff.size() > 0)
+		return 1;
 	if(d_stream.avail_in > 0)
 		return 1;
 	int lengthInBuff = (char *)d_stream.next_out - this->decodeBuff;
