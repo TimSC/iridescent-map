@@ -33,7 +33,6 @@ DecodeGzip::DecodeGzip(std::streambuf &inStream,
 	d_stream.avail_in = (uInt)fs.gcount();
 	d_stream.next_out = (Bytef*)this->decodeBuff;
 	d_stream.avail_out = (uInt)decodeBufferSize;
-	outCursor = this->decodeBuff;
 
 	//cout << "read " << d_stream.avail_in << endl;
 	int err = inflateInit2(&d_stream, 16+MAX_WBITS);
@@ -48,21 +47,22 @@ DecodeGzip::~DecodeGzip()
 	delete [] this->decodeBuff;
 }
 
+void DecodeGzip::CopyDataToOutputBuff()
+{
+	int lengthInBuff = (char *)d_stream.next_out - this->decodeBuff;
+	this->outputBuff.append(this->decodeBuff, lengthInBuff);
+	d_stream.next_out = (Bytef*)this->decodeBuff;
+	d_stream.avail_out = (uInt)decodeBufferSize;
+}
+
 streamsize DecodeGzip::ReturnDataFromOutBuff(char* s, streamsize n)
 {
-	int lengthInBuff = (char *)d_stream.next_out - outCursor;
+	int lengthInBuff = this->outputBuff.size();
 	int lenToCopy = lengthInBuff;
 	if(n < lenToCopy) lenToCopy = n;
 	
-	memcpy(s, outCursor, lenToCopy);
-	outCursor += lenToCopy;
-	if(lengthInBuff == lenToCopy)
-	{
-		//Clear buffer
-		d_stream.next_out = (Bytef*)this->decodeBuff;
-		d_stream.avail_out = (uInt)decodeBufferSize;
-		outCursor = this->decodeBuff;
-	}
+	memcpy(s, this->outputBuff.c_str(), lenToCopy);
+	this->outputBuff = std::string(&this->outputBuff[lenToCopy], this->outputBuff.size() - lenToCopy);
 	return lenToCopy;
 }
 
@@ -89,6 +89,7 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 		{
 			if(err != Z_OK)
 				throw runtime_error(ConcatStr("inflate failed: ", zError(err)));
+			CopyDataToOutputBuff();
 			return ReturnDataFromOutBuff(s, n);
 		}
 	}
@@ -96,6 +97,7 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 	err = inflateEnd(&d_stream);
 	if(err != Z_OK)
 		throw runtime_error(ConcatStr("inflateEnd failed: ", zError(err)));	
+	CopyDataToOutputBuff();
 	return ReturnDataFromOutBuff(s, n);
 }
 
@@ -112,7 +114,7 @@ streamsize DecodeGzip::showmanyc()
 {
 	if(d_stream.avail_in > 0)
 		return 1;
-	int lengthInBuff = (char *)d_stream.next_out - outCursor;
+	int lengthInBuff = (char *)d_stream.next_out - this->decodeBuff;
 	if(lengthInBuff > 0)
 		return 1;
 	return inStream.in_avail() > 1;

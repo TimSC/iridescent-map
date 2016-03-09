@@ -13,10 +13,11 @@ protected:
 	std::streambuf &inStream;
 	std::iostream fs;
 	z_stream d_stream;
-	char *outCursor;
 	size_t readBufferSize;
 	size_t decodeBufferSize;
+	std::string outputBuff;
 
+	void CopyDataToOutputBuff();
 	std::streamsize ReturnDataFromOutBuff(char* s, std::streamsize n);
 
 public:
