@@ -62,7 +62,8 @@ streamsize DecodeGzip::ReturnDataFromOutBuff(char* s, streamsize n)
 	int lenToCopy = outBuff.size();
 	if(n < lenToCopy) lenToCopy = n;
 	strncpy(s, outBuff.c_str(), lenToCopy);
-	outBuff = outBuff.substr(lenToCopy);
+	if(lenToCopy > 0)
+		outBuff = std::string(&outBuff[lenToCopy], outBuff.size()-lenToCopy);
 	return lenToCopy;
 }
 
@@ -130,19 +131,21 @@ void Test(streambuf &st)
 {
 	int testBuffSize = 200;
 	char buff[testBuffSize];
+	ofstream testOut("testout.txt");
 	while(st.in_avail()>0)
 	{
 		int len = st.sgetn(buff, testBuffSize-1);
 		buff[len] = '\0';
 		cout << buff;
+		testOut << buff;
 	}
-	
+	testOut.flush();
 }
 
 int main()
 {
 	std::filebuf fb;
-	fb.open("test2.txt.gz", std::ios::in);
+	fb.open("test.txt.gz", std::ios::in);
 	class DecodeGzip decodeGzip(fb);
 
 	Test(decodeGzip);
