@@ -40,7 +40,7 @@ DecodeGzip::DecodeGzip(std::streambuf &inStream, std::streamsize readBuffSize, s
 	decodeBuffCursor = decodeBuff;
 }
 
-bool DecodeGzip::Decode()
+void DecodeGzip::Decode()
 {
 	int err = Z_OK;
 	while(!fs.eof())
@@ -65,7 +65,7 @@ bool DecodeGzip::Decode()
 					throw runtime_error(ConcatStr("inflate failed: ", zError(err)));
 
 				decodeBuffCursor = decodeBuff;
-				return false;
+				return;
 			}
 		}
 	}
@@ -81,7 +81,7 @@ bool DecodeGzip::Decode()
 	
 	decodeDone = true;
 	decodeBuffCursor = decodeBuff;
-	return true;
+	return;
 }
 
 DecodeGzip::~DecodeGzip()

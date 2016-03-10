@@ -16,14 +16,16 @@ protected:
 	char *decodeBuffCursor;
 	std::streamsize readBuffSize, decodeBuffSize;
 
-	bool Decode();
+	void Decode();
+
+	//Override streambuf virtual methods
+	std::streamsize xsgetn (char* s, std::streamsize n);
 	int uflow();
+	std::streamsize showmanyc();
 
 public:
 	DecodeGzip(std::streambuf &inStream, std::streamsize readBuffSize = 1024*128, std::streamsize decodeBuffSize = 1024*128);
 	virtual ~DecodeGzip();
-	std::streamsize xsgetn (char* s, std::streamsize n);
-	std::streamsize showmanyc();
 };
 
 #endif //_READ_GZIP_H
