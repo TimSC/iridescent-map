@@ -18,6 +18,7 @@ std::string ConcatStr(const char *a, const char *b)
 
 DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStream), decodeDone(false)
 {
+	decodeBuffCursor = NULL;
 	fs.read(this->readBuff, READ_BUFF_SIZE);
 
 	d_stream.zalloc = (alloc_func)NULL;
@@ -32,6 +33,7 @@ DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStr
 	int err = inflateInit2(&d_stream, 16+MAX_WBITS);
 	if(err != Z_OK)
 		throw runtime_error(ConcatStr("inflateInit2 failed: ", zError(err)));
+	decodeBuffCursor = decodeBuff;
 }
 
 bool DecodeGzip::Decode()
@@ -56,7 +58,7 @@ bool DecodeGzip::Decode()
 				if(err != Z_OK)
 					throw runtime_error(ConcatStr("inflate failed: ", zError(err)));
 
-				CopyToOutputBuffer();
+				decodeBuffCursor = decodeBuff;
 				return false;
 			}
 		}
@@ -70,8 +72,8 @@ bool DecodeGzip::Decode()
 	if(err != Z_OK)
 		throw runtime_error(ConcatStr("inflateEnd failed: ", zError(err)));
 	
-	CopyToOutputBuffer();
 	decodeDone = true;
+	decodeBuffCursor = decodeBuff;
 	return true;
 }
 
@@ -80,32 +82,41 @@ DecodeGzip::~DecodeGzip()
 
 }
 
-void DecodeGzip::CopyToOutputBuffer()
-{
-	size_t outLen = DECODE_BUFF_SIZE - d_stream.avail_out;
-	outBuff.append(decodeBuff, outLen);
-	d_stream.next_out = (Bytef*)this->decodeBuff;
-	d_stream.avail_out = (uInt)DECODE_BUFF_SIZE;
-}
-
-streamsize DecodeGzip::ReturnDataFromOutBuff(char* s, streamsize n)
-{
-	int lenToCopy = outBuff.size();
-	if(n < lenToCopy) lenToCopy = n;
-	memcpy(s, outBuff.c_str(), lenToCopy);
-	if(lenToCopy > 0)
-		outBuff = std::string(&outBuff[lenToCopy], outBuff.size()-lenToCopy);
-	return lenToCopy;
-}
-
 streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 {	
 	int err = Z_OK;
+	char *outputBuffCursor = s;
+	streamsize outputTotal = 0;
 
-	while(!decodeDone && this->outBuff.size() < n)
-		Decode();
+	while(outputTotal < n && showmanyc() > 0)
+	{
+		if(!decodeDone && d_stream.avail_out == (uInt)DECODE_BUFF_SIZE)
+		{
+			Decode();
+		}
 
-	return ReturnDataFromOutBuff(s, n);
+		streamsize bytesInDecodeBuff = (char *)d_stream.next_out - decodeBuffCursor;
+		if(bytesInDecodeBuff > 0)
+		{
+			streamsize bytesToCopy = n - outputTotal;
+			if (bytesToCopy > bytesInDecodeBuff)
+				bytesToCopy = bytesInDecodeBuff;
+			memcpy(outputBuffCursor, decodeBuffCursor, bytesToCopy);
+			outputBuffCursor += bytesToCopy;
+			decodeBuffCursor += bytesToCopy;
+			outputTotal += bytesToCopy;
+		}
+
+		bytesInDecodeBuff = (char *)d_stream.next_out - decodeBuffCursor;
+		if(bytesInDecodeBuff == 0)
+		{
+			d_stream.next_out = (Bytef*)this->decodeBuff;
+			d_stream.avail_out = (uInt)DECODE_BUFF_SIZE;
+		}
+
+	}
+
+	return outputTotal;
 }
 
 int DecodeGzip::uflow()
@@ -119,9 +130,10 @@ int DecodeGzip::uflow()
 
 streamsize DecodeGzip::showmanyc()
 {
-	if(d_stream.avail_in > 0)
+	streamsize bytesInDecodeBuff = (char *)d_stream.next_out - decodeBuffCursor;
+	if(bytesInDecodeBuff > 0)
 		return 1;
-	if(outBuff.size() > 0)
+	if(d_stream.avail_in > 0)
 		return 1;
 	return inStream.in_avail() > 1;
 }

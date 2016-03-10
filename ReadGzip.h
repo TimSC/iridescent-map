@@ -15,13 +15,11 @@ protected:
 	std::streambuf &inStream;
 	std::iostream fs;
 	z_stream d_stream;
-	std::string outBuff;
 	bool decodeDone;
+	char *decodeBuffCursor;
 
 	bool Decode();
 	int uflow();
-	void CopyToOutputBuffer();
-	std::streamsize ReturnDataFromOutBuff(char* s, std::streamsize n);
 
 public:
 	DecodeGzip(std::streambuf &inStream);
