@@ -15,11 +15,15 @@ std::string ConcatStr(const char *a, const char *b)
 	return out;
 }
 
-
-DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStream), decodeDone(false)
+DecodeGzip::DecodeGzip(std::streambuf &inStream, std::streamsize readBuffSize, std::streamsize decodeBuffSize) : 
+	inStream(inStream), fs(&inStream), decodeDone(false),
+	readBuffSize(readBuffSize), decodeBuffSize(decodeBuffSize)
 {
+	this->readBuff = new char[readBuffSize];
+	this->decodeBuff = new char[decodeBuffSize];
+
 	decodeBuffCursor = NULL;
-	fs.read(this->readBuff, READ_BUFF_SIZE);
+	fs.read(this->readBuff, readBuffSize);
 
 	d_stream.zalloc = (alloc_func)NULL;
 	d_stream.zfree = (free_func)NULL;
@@ -27,7 +31,7 @@ DecodeGzip::DecodeGzip(std::streambuf &inStream) : inStream(inStream), fs(&inStr
 	d_stream.next_in  = (Bytef*)this->readBuff;
 	d_stream.avail_in = (uInt)fs.gcount();
 	d_stream.next_out = (Bytef*)this->decodeBuff;
-	d_stream.avail_out = (uInt)DECODE_BUFF_SIZE;
+	d_stream.avail_out = (uInt)decodeBuffSize;
 
 	//cout << "read " << d_stream.avail_in << endl;
 	int err = inflateInit2(&d_stream, 16+MAX_WBITS);
@@ -43,7 +47,8 @@ bool DecodeGzip::Decode()
 	{
 		if(d_stream.avail_in == 0 && !fs.eof())
 		{
-			fs.read(this->readBuff, READ_BUFF_SIZE);
+			//Read buffer is empty, so read more from file
+			fs.read(this->readBuff, readBuffSize);
 			d_stream.next_in  = (Bytef*)this->readBuff;
 			d_stream.avail_in = (uInt)fs.gcount();
 			//cout << "read " << d_stream.avail_in << endl;
@@ -51,6 +56,7 @@ bool DecodeGzip::Decode()
 
 		if(d_stream.avail_in > 0)
 		{
+			//Data is waiting to be decoded
 			err = inflate(&d_stream, Z_NO_FLUSH);
 
 			if (err != Z_STREAM_END)
@@ -64,6 +70,7 @@ bool DecodeGzip::Decode()
 		}
 	}
 
+	//Finish and clean up
 	err = inflate(&d_stream, Z_FINISH);
 	if(err != Z_OK && err != Z_STREAM_END)
 		throw runtime_error(ConcatStr("inflate failed: ", zError(err)));
@@ -79,7 +86,8 @@ bool DecodeGzip::Decode()
 
 DecodeGzip::~DecodeGzip()
 {
-
+	delete [] this->readBuff;
+	delete [] this->decodeBuff;
 }
 
 streamsize DecodeGzip::xsgetn (char* s, streamsize n)
@@ -90,14 +98,16 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 
 	while(outputTotal < n && showmanyc() > 0)
 	{
-		if(!decodeDone && d_stream.avail_out == (uInt)DECODE_BUFF_SIZE)
+		if(!decodeDone && d_stream.avail_out == (uInt)decodeBuffSize)
 		{
+			//Decode buffer is empty, so do more decoding
 			Decode();
 		}
 
 		streamsize bytesInDecodeBuff = (char *)d_stream.next_out - decodeBuffCursor;
 		if(bytesInDecodeBuff > 0)
 		{
+			//Copy data from decode buffer to output
 			streamsize bytesToCopy = n - outputTotal;
 			if (bytesToCopy > bytesInDecodeBuff)
 				bytesToCopy = bytesInDecodeBuff;
@@ -107,11 +117,13 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 			outputTotal += bytesToCopy;
 		}
 
+		//Check if the decode buffer has been completely copied to output
 		bytesInDecodeBuff = (char *)d_stream.next_out - decodeBuffCursor;
 		if(bytesInDecodeBuff == 0)
 		{
+			//Mark buffer as empty
 			d_stream.next_out = (Bytef*)this->decodeBuff;
-			d_stream.avail_out = (uInt)DECODE_BUFF_SIZE;
+			d_stream.avail_out = (uInt)decodeBuffSize;
 		}
 
 	}
