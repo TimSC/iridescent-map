@@ -16,20 +16,20 @@ std::string ConcatStr(const char *a, const char *b)
 }
 
 DecodeGzip::DecodeGzip(std::streambuf &inStream, std::streamsize readBuffSize, std::streamsize decodeBuffSize) : 
-	inStream(inStream), fs(&inStream), decodeDone(false),
+	inStream(inStream), decodeDone(false),
 	readBuffSize(readBuffSize), decodeBuffSize(decodeBuffSize)
 {
 	this->readBuff = new char[readBuffSize];
 	this->decodeBuff = new char[decodeBuffSize];
 
 	decodeBuffCursor = NULL;
-	fs.read(this->readBuff, readBuffSize);
+	streamsize len = inStream.sgetn(this->readBuff, readBuffSize);
 
 	d_stream.zalloc = (alloc_func)NULL;
 	d_stream.zfree = (free_func)NULL;
 	d_stream.opaque = (voidpf)NULL;
 	d_stream.next_in  = (Bytef*)this->readBuff;
-	d_stream.avail_in = (uInt)fs.gcount();
+	d_stream.avail_in = (uInt)len;
 	d_stream.next_out = (Bytef*)this->decodeBuff;
 	d_stream.avail_out = (uInt)decodeBuffSize;
 
@@ -43,14 +43,14 @@ DecodeGzip::DecodeGzip(std::streambuf &inStream, std::streamsize readBuffSize, s
 void DecodeGzip::Decode()
 {
 	int err = Z_OK;
-	while(!fs.eof())
+	while(inStream.in_avail() > 1)
 	{
-		if(d_stream.avail_in == 0 && !fs.eof())
+		if(d_stream.avail_in == 0 && inStream.in_avail() > 1)
 		{
 			//Read buffer is empty, so read more from file
-			fs.read(this->readBuff, readBuffSize);
+			streamsize len = inStream.sgetn(this->readBuff, readBuffSize);
 			d_stream.next_in  = (Bytef*)this->readBuff;
-			d_stream.avail_in = (uInt)fs.gcount();
+			d_stream.avail_in = (uInt)len;
 			//cout << "read " << d_stream.avail_in << endl;
 		}
 

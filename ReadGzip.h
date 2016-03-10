@@ -10,7 +10,6 @@ protected:
 	char *readBuff;
 	char *decodeBuff;
 	std::streambuf &inStream;
-	std::iostream fs;
 	z_stream d_stream;
 	bool decodeDone;
 	char *decodeBuffCursor;
