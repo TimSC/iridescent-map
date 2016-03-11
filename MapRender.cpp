@@ -375,11 +375,13 @@ MapRender::~MapRender()
 
 }
 
-void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransform &transform)
+void MapRender::Render(int zoom, class FeatureStore &featureStore, 
+	class ITransform &transform, OrganisedLabels &organisedLabelsOut)
 {
 	class DrawTreeNode drawTree;
 	class LabelEngine labelEngine(this->output);
 	
+	//Converts objects to draw tree and label info based on style definition
 	class FeatureConverter featureConverter(this->output);
 
 	class FeaturesToDrawCmds featuresToDrawCmds(&drawTree);
@@ -393,10 +395,16 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore, class ITransf
 	//Interate through draw tree to produce ordered draw commands
 	drawTree.WriteDrawCommands(this->output);
 
-	OrganisedLabels organisedLabels;
-	labelEngine.OrganiseLabels(organisedLabels);
-	labelEngine.WriteDrawCommands(organisedLabels);
+	organisedLabelsOut.clear();
+	labelEngine.OrganiseLabels(organisedLabelsOut);
+	
+	this->output->Draw();
+}
 
+void MapRender::RenderLabels(const OrganisedLabels &organisedLabels)
+{
+	class LabelEngine labelEngine(this->output);
+	labelEngine.WriteDrawCommands(organisedLabels);
 	this->output->Draw();
 }
 

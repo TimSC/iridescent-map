@@ -108,6 +108,7 @@ public:
 	void FindLines(class IRegroupResultHandler *output);
 	void FindPois(class IRegroupResultHandler *output);
 
+	///Iterates over object lists and regenerates internal ID indexing map structures.
 	void UpdateIdMappings();
 	bool DetectIfArea(const std::vector<int64_t> &wayNodes, const TagMap &tags);
 };

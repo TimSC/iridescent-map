@@ -11,6 +11,7 @@ using namespace std;
 
 void ReadInput(int zoom, int xtile, int ytile, cairo_surface_t *surface)
 {
+	// ** Read input file and store in memory using node/way/relation **
 	stringstream finaStr;
 	finaStr << xtile << "/" << ytile << ".o5m.gz";
 	string fina = finaStr.str();
@@ -19,9 +20,6 @@ void ReadInput(int zoom, int xtile, int ytile, cairo_surface_t *surface)
 	fi.open(fina.c_str(), std::ios::in);
 
 	class DecodeGzip fiDec(fi);
-
-	//std::filebuf fiDec;
-	//fiDec.open("1374.o5m", std::ios::in);
 
 	class SlippyTilesTransform slippyTilesTransform(zoom, xtile, ytile);
 
@@ -37,18 +35,24 @@ void ReadInput(int zoom, int xtile, int ytile, cairo_surface_t *surface)
 	while (fiDec.in_avail()>0)
 		dec.DecodeNext();
 	
+	//Iterates over object lists and regenerates internal ID indexing map structures.
 	regrouper.UpdateIdMappings();
+
+	// ** Change to area/line/POI representation **
 
 	FeatureStore featureStore;
 	regrouper.FindAreas(&featureStore);
 	regrouper.FindLines(&featureStore);
 	regrouper.FindPois(&featureStore);
-	
-	class DrawLibCairoPango drawlib(surface);
-	
+
+	// ** Render without labels and collect label info **
+
+	class DrawLibCairoPango drawlib(surface);	
 	class MapRender mapRender(&drawlib);
+	OrganisedLabels organisedLabels;
 	
-	mapRender.Render(zoom, featureStore, slippyTilesTransform);
+	mapRender.Render(zoom, featureStore, slippyTilesTransform, organisedLabels);
+	mapRender.RenderLabels(organisedLabels);
 }
 
 int main()

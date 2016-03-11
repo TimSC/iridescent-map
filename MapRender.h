@@ -5,6 +5,7 @@
 #include "Regrouper.h"
 #include "Transform.h"
 #include "Style.h"
+#include "LabelEngine.h"
 
 typedef std::map<class ShapeProperties, std::vector<Polygon> > StyledPolygons;
 typedef std::map<class LineProperties, Contours> StyledLines;
@@ -36,7 +37,9 @@ public:
 	MapRender(class IDrawLib *output);
 	virtual ~MapRender();
 
-	void Render(int zoom, class FeatureStore &featureStore, class ITransform &transform);
+	void Render(int zoom, class FeatureStore &featureStore, 
+		class ITransform &transform, OrganisedLabels &organisedLabelsOut);
+	void RenderLabels(const OrganisedLabels &organisedLabels);
 };
 
 #endif //_MAP_RENDER_H
