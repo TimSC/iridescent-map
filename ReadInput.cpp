@@ -44,15 +44,43 @@ void ReadInput(int zoom, int xtile, int ytile, FeatureStore &featureStore)
 	regrouper.FindPois(&featureStore);
 }
 
+typedef map<int, map<int, OrganisedLabels> > OrganisedLabelsMap;
+
 int main()
 {
-	cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 640, 640);
 
-	FeatureStore featureStore;
+	// ** Collect labels from off screen tiles
+	OrganisedLabelsMap organisedLabelsMap;
+	cairo_surface_t *offScreenSurface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 640, 640);
 
-	ReadInput(12, 2035, 1374, featureStore);
+	for(int x=2034; x <= 2036; x++)
+		for(int y=1373; y<= 1375; y++)
+		{
+			if(x == 2035 && y == 1374) continue;
+			FeatureStore featureStore;
+			ReadInput(12, x, y, featureStore);
+			class SlippyTilesTransform slippyTilesTransform(12, x, y);
+
+			class DrawLibCairoPango drawlib(offScreenSurface);	
+			class MapRender mapRender(&drawlib);
+			OrganisedLabels organisedLabels;
+			
+			mapRender.Render(12, featureStore, false, true, slippyTilesTransform, organisedLabels);
+
+			OrganisedLabelsMap::iterator it = organisedLabelsMap.find(x);
+			if(it == organisedLabelsMap.end())
+				organisedLabelsMap[x] = map<int, OrganisedLabels>();
+			map<int, OrganisedLabels> &col = organisedLabelsMap[x];
+			col[y] = organisedLabels;
+		}
+
+	cairo_surface_destroy(offScreenSurface);
 
 	// ** Render without labels and collect label info **
+
+	cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 640, 640);
+	FeatureStore featureStore;
+	ReadInput(12, 2035, 1374, featureStore);
 
 	class SlippyTilesTransform slippyTilesTransform(12, 2035, 1374);
 
@@ -61,6 +89,9 @@ int main()
 	OrganisedLabels organisedLabels;
 	
 	mapRender.Render(12, featureStore, true, true, slippyTilesTransform, organisedLabels);
+
+	// ** Render labels ** 	
+
 	mapRender.RenderLabels(organisedLabels);
 
 	cairo_surface_write_to_png(surface, "image.png");	
