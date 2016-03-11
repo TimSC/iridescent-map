@@ -89,10 +89,22 @@ int main()
 	OrganisedLabels organisedLabels;
 	
 	mapRender.Render(12, featureStore, true, true, slippyTilesTransform, organisedLabels);
+	organisedLabelsMap[2035][1374] = organisedLabels;
 
 	// ** Render labels ** 	
+	std::vector<OrganisedLabels> labelList;
+	std::vector<std::pair<double, double> > labelOffsets;
+	for(int y=1373; y<= 1375; y++)
+	{
+		for(int x=2034; x <= 2036; x++)
+		{
+			map<int, OrganisedLabels> &col = organisedLabelsMap[x];
+			labelList.push_back(col[y]);	
+			labelOffsets.push_back(std::pair<double, double>(640.0*(x-2035), 640.0*(y-1374)));
+		}
+	}
 
-	mapRender.RenderLabels(organisedLabels);
+	mapRender.RenderLabels(labelList, labelOffsets);
 
 	cairo_surface_write_to_png(surface, "image.png");	
 	cairo_surface_destroy(surface);

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <string.h>
+#include <stdexcept>
 #include <stdio.h>
 #include "LabelEngine.h"
 using namespace std;
@@ -409,10 +410,17 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore,
 	}
 }
 
-void MapRender::RenderLabels(const OrganisedLabels &organisedLabels)
+void MapRender::RenderLabels(const std::vector<OrganisedLabels> &labelList,
+	const std::vector<std::pair<double, double> > &labelOffsets)
 {
+	if(labelList.size() != labelOffsets.size())
+		throw std::runtime_error("List lengths should match");
 	class LabelEngine labelEngine(this->output);
-	labelEngine.WriteDrawCommands(organisedLabels);
+	for(size_t i = 0; i< labelList.size(); i++)
+	{
+		const std::pair<double, double> &offset = labelOffsets[i];
+		labelEngine.WriteDrawCommands(labelList[i]);
+	}
 	this->output->Draw();
 }
 

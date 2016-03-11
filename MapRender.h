@@ -40,7 +40,8 @@ public:
 	void Render(int zoom, class FeatureStore &featureStore, 
 		bool renderObjects, bool outputLabels,
 		class ITransform &transform, OrganisedLabels &organisedLabelsOut);
-	void RenderLabels(const OrganisedLabels &organisedLabels);
+	void RenderLabels(const std::vector<OrganisedLabels> &labelList,
+		const std::vector<std::pair<double, double> > &labelOffsets);
 };
 
 #endif //_MAP_RENDER_H

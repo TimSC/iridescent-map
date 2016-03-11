@@ -192,6 +192,7 @@ void LabelEngine::OrganiseLabels(OrganisedLabels &organisedLabelsOut)
 
 void LabelEngine::WriteDrawCommands(const OrganisedLabels &organisedLabels)
 {
+
 	for(OrganisedLabels::const_iterator itr = organisedLabels.begin(); itr != organisedLabels.end(); itr++)
 	{
 		const vector<class LabelDef> &lbs = itr->second;
