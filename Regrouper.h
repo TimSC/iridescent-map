@@ -92,6 +92,7 @@ public:
 		const IdLatLonList &shape);
 	virtual void FoundPoi(const TagMap &tags, 
 		double lat, double lon);
+	virtual void Clear();
 };
 
 class Regrouper : public OsmData

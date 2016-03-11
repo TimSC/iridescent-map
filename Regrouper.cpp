@@ -166,6 +166,13 @@ void FeatureStore::FoundPoi(const TagMap &tags,
 	this->pois.push_back(FeaturePoi(tags, lat, lon));
 }
 
+void FeatureStore::Clear()
+{
+	this->areas.clear();
+	this->lines.clear();
+	this->pois.clear();
+}
+
 // ******************************
 
 Regrouper::Regrouper() : OsmData()
