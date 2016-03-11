@@ -376,6 +376,7 @@ MapRender::~MapRender()
 }
 
 void MapRender::Render(int zoom, class FeatureStore &featureStore, 
+	bool renderObjects, bool outputLabels,
 	class ITransform &transform, OrganisedLabels &organisedLabelsOut)
 {
 	class DrawTreeNode drawTree;
@@ -385,20 +386,27 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore,
 	class FeatureConverter featureConverter(this->output);
 
 	class FeaturesToDrawCmds featuresToDrawCmds(&drawTree);
-	featureConverter.shapesOutput.push_back(&featuresToDrawCmds);
+	if(renderObjects)
+		featureConverter.shapesOutput.push_back(&featuresToDrawCmds);
 
 	class FeaturesToLabelEngine featuresToLabelEngine(&labelEngine);
-	featureConverter.shapesOutput.push_back(&featuresToLabelEngine);
+	if(outputLabels)
+		featureConverter.shapesOutput.push_back(&featuresToLabelEngine);
 
 	featureConverter.Convert(zoom, featureStore, transform, this->style);
 
-	//Interate through draw tree to produce ordered draw commands
-	drawTree.WriteDrawCommands(this->output);
+	if(renderObjects)
+	{
+		//Interate through draw tree to produce ordered draw commands
+		drawTree.WriteDrawCommands(this->output);
+		this->output->Draw();
+	}
 
-	organisedLabelsOut.clear();
-	labelEngine.OrganiseLabels(organisedLabelsOut);
-	
-	this->output->Draw();
+	if(outputLabels)
+	{
+		organisedLabelsOut.clear();
+		labelEngine.OrganiseLabels(organisedLabelsOut);
+	}
 }
 
 void MapRender::RenderLabels(const OrganisedLabels &organisedLabels)

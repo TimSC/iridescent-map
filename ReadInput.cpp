@@ -60,7 +60,7 @@ int main()
 	class MapRender mapRender(&drawlib);
 	OrganisedLabels organisedLabels;
 	
-	mapRender.Render(12, featureStore, slippyTilesTransform, organisedLabels);
+	mapRender.Render(12, featureStore, true, true, slippyTilesTransform, organisedLabels);
 	mapRender.RenderLabels(organisedLabels);
 
 	cairo_surface_write_to_png(surface, "image.png");	

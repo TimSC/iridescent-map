@@ -38,6 +38,7 @@ public:
 	virtual ~MapRender();
 
 	void Render(int zoom, class FeatureStore &featureStore, 
+		bool renderObjects, bool outputLabels,
 		class ITransform &transform, OrganisedLabels &organisedLabelsOut);
 	void RenderLabels(const OrganisedLabels &organisedLabels);
 };
