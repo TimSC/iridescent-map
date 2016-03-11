@@ -15,8 +15,8 @@ public:
 	virtual ~LabelRect();
 	LabelRect& operator=(const LabelRect &arg);
 
-	bool Overlaps(const LabelRect &arg);
-	void Print();
+	bool Overlaps(const LabelRect &arg) const;
+	void Print() const;
 };
 
 class LabelDef
@@ -66,6 +66,7 @@ public:
 
 	void OrganiseLabels(OrganisedLabels &organisedLabelsOut);
 	void WriteDrawCommands(const OrganisedLabels &organisedLabels);
+	void RemoveOverlapping(const OrganisedLabels &organisedLabelsTmp, OrganisedLabels &organisedLabelsOut);
 
 	void AddPolygonLabel(const std::vector<Polygon> &polygons, std::string &textName, const TagMap &tags);
 	void AddLineLabel(const Contour &line, std::string &textName, const TagMap &tags);

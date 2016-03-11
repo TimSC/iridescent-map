@@ -99,7 +99,7 @@ int main()
 		for(int x=2034; x <= 2036; x++)
 		{
 			map<int, OrganisedLabels> &col = organisedLabelsMap[x];
-			labelList.push_back(col[y]);	
+			labelList.push_back(col[y]);
 			labelOffsets.push_back(std::pair<double, double>(640.0*(x-2035), 640.0*(y-1374)));
 		}
 	}

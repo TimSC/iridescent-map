@@ -406,7 +406,9 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore,
 	if(outputLabels)
 	{
 		organisedLabelsOut.clear();
-		labelEngine.OrganiseLabels(organisedLabelsOut);
+		OrganisedLabels organisedLabelsTmp;
+		labelEngine.OrganiseLabels(organisedLabelsTmp);
+		labelEngine.RemoveOverlapping(organisedLabelsTmp, organisedLabelsOut);
 	}
 }
 

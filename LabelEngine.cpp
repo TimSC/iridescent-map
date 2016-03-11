@@ -67,7 +67,7 @@ LabelRect& LabelRect::operator=(const LabelRect &arg)
 	return *this;
 }
 
-bool LabelRect::Overlaps(const LabelRect &arg)
+bool LabelRect::Overlaps(const LabelRect &arg) const
 {
 	if (x + w < arg.x) return false;
 	if (x >= arg.x + arg.w) return false;
@@ -76,7 +76,7 @@ bool LabelRect::Overlaps(const LabelRect &arg)
 	return true;
 }
 
-void LabelRect::Print()
+void LabelRect::Print() const
 {
 	cout << x << "," << y << "," << w << "," << h << endl;
 }
@@ -164,18 +164,7 @@ void LabelEngine::OrganiseLabels(OrganisedLabels &organisedLabelsOut)
 		double ly = label.sy;
 		textStrs.push_back(TextLabel(outString, lx, ly));
 
-		bool foundOverlap = false;
 		class LabelRect labelRect(lx, ly, width, height);
-		for(OrganisedLabels::iterator itr = organisedLabelsOut.begin(); itr != organisedLabelsOut.end(); itr++)
-		{
-			vector<class LabelDef> &lbs = itr->second;
-			for(size_t j=0; j<lbs.size(); j++)
-			{
-				foundOverlap = labelRect.Overlaps(lbs[j].labelRect);
-				if(foundOverlap) break;
-			}
-		}
-		if(foundOverlap) continue;
 
 		class TextProperties backgroundProp(0.0,0.0,0.0);
 		backgroundProp.a = 0.5;
@@ -183,10 +172,58 @@ void LabelEngine::OrganiseLabels(OrganisedLabels &organisedLabelsOut)
 		backgroundProp.lineWidth=2.0;
 
 		//Add label definition to list
-		OrganisedLabels::iterator it = organisedLabelsOut.find(0);
+		int importance = 0;
+		OrganisedLabels::iterator it = organisedLabelsOut.find(importance);
 		if(it == organisedLabelsOut.end())
-			organisedLabelsOut[0] = vector<class LabelDef>();
-		organisedLabelsOut[0].push_back(LabelDef(labelRect, foregroundProp, backgroundProp, textStrs));
+			organisedLabelsOut[importance] = vector<class LabelDef>();
+		organisedLabelsOut[importance].push_back(LabelDef(labelRect, foregroundProp, backgroundProp, textStrs));
+	}
+}
+
+bool LabelOverlaps(const class LabelDef &label, const OrganisedLabels existingLabels)
+{
+	for(OrganisedLabels::const_iterator itr = existingLabels.begin(); itr != existingLabels.end(); itr++)
+	{
+		const vector<class LabelDef> &lbs = itr->second;
+		for(size_t j=0; j<lbs.size(); j++)
+		{
+			if(label.labelRect.Overlaps(lbs[j].labelRect))
+				return true;
+		}
+	}
+	return false;
+}
+
+void LabelEngine::RemoveOverlapping(const OrganisedLabels &organisedLabelsTmp, OrganisedLabels &organisedLabelsOut)
+{
+	organisedLabelsOut.clear();
+	
+	//Starting with high imporance labels, check for overlaps
+	if(organisedLabelsTmp.size() == 0)
+		return;
+	OrganisedLabels::const_iterator itr = organisedLabelsTmp.end();
+	itr --;
+	bool looping = true;
+	while(looping)
+	{
+		if(itr == organisedLabelsTmp.begin())
+			looping = false;
+		int importance = itr->first;
+		const vector<class LabelDef> &lbs = itr->second;
+		for(size_t j=0; j<lbs.size(); j++)
+		{
+			const class LabelDef &label = lbs[j];
+			bool overlaps = LabelOverlaps(label, organisedLabelsOut);
+			if(!overlaps)
+			{
+				OrganisedLabels::iterator chkIt = organisedLabelsOut.find(importance);
+				if(chkIt == organisedLabelsOut.end())
+					organisedLabelsOut[importance] = vector<class LabelDef>();
+				organisedLabelsOut[importance].push_back(label);
+			}
+		}
+		if(looping)
+			itr --;
 	}
 }
 
