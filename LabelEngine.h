@@ -37,7 +37,7 @@ public:
 	LabelDef& operator=(const LabelDef &arg);
 };
 
-typedef std::map<int, std::vector<class LabelDef> > OrganisedLabels;
+typedef std::map<int, std::vector<class LabelDef> > LabelsByImportance;
 
 class PoiLabel
 {
@@ -64,13 +64,13 @@ public:
 	LabelEngine(class IDrawLib *output);
 	virtual ~LabelEngine();
 
-	void OrganiseLabels(OrganisedLabels &organisedLabelsOut);
-	void WriteDrawCommands(const OrganisedLabels &organisedLabels);
-	void RemoveOverlapping(const OrganisedLabels &organisedLabelsTmp, OrganisedLabels &organisedLabelsOut);
+	void OrganiseLabels(LabelsByImportance &organisedLabelsOut);
+	void WriteDrawCommands(const LabelsByImportance &organisedLabels);
+	void RemoveOverlapping(const LabelsByImportance &organisedLabelsTmp, LabelsByImportance &organisedLabelsOut);
 
 	void AddPolygonLabel(const std::vector<Polygon> &polygons, std::string &textName, const TagMap &tags);
 	void AddLineLabel(const Contour &line, std::string &textName, const TagMap &tags);
-	void AddPoiLabel(double sx, double sy, std::string &textName, const TagMap &tags);
+	void AddPoiLabel(double sx, double sy, std::string &textName, const TagMap &tags, int importance);
 };
 
 #endif //_LABEL_ENGINE_H

@@ -39,8 +39,8 @@ public:
 
 	void Render(int zoom, class FeatureStore &featureStore, 
 		bool renderObjects, bool outputLabels,
-		class ITransform &transform, OrganisedLabels &organisedLabelsOut);
-	void RenderLabels(const std::vector<OrganisedLabels> &labelList,
+		class ITransform &transform, LabelsByImportance &organisedLabelsOut);
+	void RenderLabels(const std::vector<LabelsByImportance> &labelList,
 		const std::vector<std::pair<double, double> > &labelOffsets);
 };
 

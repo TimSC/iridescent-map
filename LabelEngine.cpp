@@ -127,10 +127,9 @@ LabelEngine::~LabelEngine()
 
 }
 
-void LabelEngine::OrganiseLabels(OrganisedLabels &organisedLabelsOut)
+void LabelEngine::OrganiseLabels(LabelsByImportance &organisedLabelsOut)
 {
 	organisedLabelsOut.clear();
-
 	for(size_t i=0;i < this->poiLabels.size(); i++)
 	{
 		class PoiLabel &label = this->poiLabels[i];
@@ -158,7 +157,7 @@ void LabelEngine::OrganiseLabels(OrganisedLabels &organisedLabelsOut)
 				width=0.0, height=0.0;
 			}
 		}
-		
+	
 		std::vector<class TextLabel> textStrs;
 		double lx = label.sx - width / 2.0;
 		double ly = label.sy;
@@ -173,16 +172,16 @@ void LabelEngine::OrganiseLabels(OrganisedLabels &organisedLabelsOut)
 
 		//Add label definition to list
 		int importance = 0;
-		OrganisedLabels::iterator it = organisedLabelsOut.find(importance);
+		LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
 		if(it == organisedLabelsOut.end())
 			organisedLabelsOut[importance] = vector<class LabelDef>();
 		organisedLabelsOut[importance].push_back(LabelDef(labelRect, foregroundProp, backgroundProp, textStrs));
 	}
 }
 
-bool LabelOverlaps(const class LabelDef &label, const OrganisedLabels existingLabels)
+bool LabelOverlaps(const class LabelDef &label, const LabelsByImportance existingLabels)
 {
-	for(OrganisedLabels::const_iterator itr = existingLabels.begin(); itr != existingLabels.end(); itr++)
+	for(LabelsByImportance::const_iterator itr = existingLabels.begin(); itr != existingLabels.end(); itr++)
 	{
 		const vector<class LabelDef> &lbs = itr->second;
 		for(size_t j=0; j<lbs.size(); j++)
@@ -194,14 +193,14 @@ bool LabelOverlaps(const class LabelDef &label, const OrganisedLabels existingLa
 	return false;
 }
 
-void LabelEngine::RemoveOverlapping(const OrganisedLabels &organisedLabelsTmp, OrganisedLabels &organisedLabelsOut)
+void LabelEngine::RemoveOverlapping(const LabelsByImportance &organisedLabelsTmp, LabelsByImportance &organisedLabelsOut)
 {
 	organisedLabelsOut.clear();
 	
 	//Starting with high imporance labels, check for overlaps
 	if(organisedLabelsTmp.size() == 0)
 		return;
-	OrganisedLabels::const_iterator itr = organisedLabelsTmp.end();
+	LabelsByImportance::const_iterator itr = organisedLabelsTmp.end();
 	itr --;
 	bool looping = true;
 	while(looping)
@@ -216,7 +215,7 @@ void LabelEngine::RemoveOverlapping(const OrganisedLabels &organisedLabelsTmp, O
 			bool overlaps = LabelOverlaps(label, organisedLabelsOut);
 			if(!overlaps)
 			{
-				OrganisedLabels::iterator chkIt = organisedLabelsOut.find(importance);
+				LabelsByImportance::iterator chkIt = organisedLabelsOut.find(importance);
 				if(chkIt == organisedLabelsOut.end())
 					organisedLabelsOut[importance] = vector<class LabelDef>();
 				organisedLabelsOut[importance].push_back(label);
@@ -227,10 +226,10 @@ void LabelEngine::RemoveOverlapping(const OrganisedLabels &organisedLabelsTmp, O
 	}
 }
 
-void LabelEngine::WriteDrawCommands(const OrganisedLabels &organisedLabels)
+void LabelEngine::WriteDrawCommands(const LabelsByImportance &organisedLabels)
 {
 
-	for(OrganisedLabels::const_iterator itr = organisedLabels.begin(); itr != organisedLabels.end(); itr++)
+	for(LabelsByImportance::const_iterator itr = organisedLabels.begin(); itr != organisedLabels.end(); itr++)
 	{
 		const vector<class LabelDef> &lbs = itr->second;
 		for(size_t j=0; j<lbs.size(); j++)
@@ -248,7 +247,6 @@ void LabelEngine::WriteDrawCommands(const OrganisedLabels &organisedLabels)
 	}
 }
 
-
 void LabelEngine::AddPolygonLabel(const std::vector<Polygon> &polygons, std::string &textName, const TagMap &tags)
 {
 
@@ -259,7 +257,7 @@ void LabelEngine::AddLineLabel(const Contour &line, std::string &textName, const
 
 }
 
-void LabelEngine::AddPoiLabel(double sx, double sy, std::string &textName, const TagMap &tags)
+void LabelEngine::AddPoiLabel(double sx, double sy, std::string &textName, const TagMap &tags, int importance)
 {
 	this->poiLabels.push_back(PoiLabel(sx, sy, textName, tags));
 }

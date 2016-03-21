@@ -358,7 +358,8 @@ void FeaturesToLabelEngine::OutPoi(StyleDef &styleDef, double px, double py, con
 		else
 			continue; //Don't draw if colour not specified
 
-		this->labelEngine->AddPoiLabel(px, py, textName, tags);
+		int importance = 0;
+		this->labelEngine->AddPoiLabel(px, py, textName, tags, importance);
 	}
 }
 
@@ -378,7 +379,7 @@ MapRender::~MapRender()
 
 void MapRender::Render(int zoom, class FeatureStore &featureStore, 
 	bool renderObjects, bool outputLabels,
-	class ITransform &transform, OrganisedLabels &organisedLabelsOut)
+	class ITransform &transform, LabelsByImportance &organisedLabelsOut)
 {
 	class DrawTreeNode drawTree;
 	class LabelEngine labelEngine(this->output);
@@ -406,13 +407,13 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore,
 	if(outputLabels)
 	{
 		organisedLabelsOut.clear();
-		OrganisedLabels organisedLabelsTmp;
+		LabelsByImportance organisedLabelsTmp;
 		labelEngine.OrganiseLabels(organisedLabelsTmp);
 		labelEngine.RemoveOverlapping(organisedLabelsTmp, organisedLabelsOut);
 	}
 }
 
-void MapRender::RenderLabels(const std::vector<OrganisedLabels> &labelList,
+void MapRender::RenderLabels(const std::vector<LabelsByImportance> &labelList,
 	const std::vector<std::pair<double, double> > &labelOffsets)
 {
 	if(labelList.size() != labelOffsets.size())

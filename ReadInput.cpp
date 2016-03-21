@@ -44,7 +44,7 @@ void ReadInput(int zoom, int xtile, int ytile, FeatureStore &featureStore)
 	regrouper.FindPois(&featureStore);
 }
 
-typedef map<int, map<int, OrganisedLabels> > OrganisedLabelsMap;
+typedef map<int, map<int, LabelsByImportance> > OrganisedLabelsMap;
 
 int main()
 {
@@ -63,14 +63,14 @@ int main()
 
 			class DrawLibCairoPango drawlib(offScreenSurface);	
 			class MapRender mapRender(&drawlib);
-			OrganisedLabels organisedLabels;
+			LabelsByImportance organisedLabels;
 			
 			mapRender.Render(12, featureStore, false, true, slippyTilesTransform, organisedLabels);
 
 			OrganisedLabelsMap::iterator it = organisedLabelsMap.find(x);
 			if(it == organisedLabelsMap.end())
-				organisedLabelsMap[x] = map<int, OrganisedLabels>();
-			map<int, OrganisedLabels> &col = organisedLabelsMap[x];
+				organisedLabelsMap[x] = map<int, LabelsByImportance>();
+			map<int, LabelsByImportance> &col = organisedLabelsMap[x];
 			col[y] = organisedLabels;
 		}
 
@@ -86,19 +86,19 @@ int main()
 
 	class DrawLibCairoPango drawlib(surface);	
 	class MapRender mapRender(&drawlib);
-	OrganisedLabels organisedLabels;
+	LabelsByImportance organisedLabels;
 	
 	mapRender.Render(12, featureStore, true, true, slippyTilesTransform, organisedLabels);
 	organisedLabelsMap[2035][1374] = organisedLabels;
 
 	// ** Render labels ** 	
-	std::vector<OrganisedLabels> labelList;
+	std::vector<LabelsByImportance> labelList;
 	std::vector<std::pair<double, double> > labelOffsets;
 	for(int y=1373; y<= 1375; y++)
 	{
 		for(int x=2034; x <= 2036; x++)
 		{
-			map<int, OrganisedLabels> &col = organisedLabelsMap[x];
+			map<int, LabelsByImportance> &col = organisedLabelsMap[x];
 			labelList.push_back(col[y]);
 			labelOffsets.push_back(std::pair<double, double>(640.0*(x-2035), 640.0*(y-1374)));
 		}
