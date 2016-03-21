@@ -114,6 +114,11 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 	{
 		StyleAttributes style;
 		style["polygon-fill"] = "#0000ff";
+		style["text-name"] = "[name]";
+		style["text-fill"] = "#88f";
+		style["text-size"] = "9";
+		style["text-importance"] = "2";
+		style["text-halo-fill"] = "#4488";
 
 		LayerDef layerDef;
 		layerDef.push_back(1);
@@ -174,7 +179,7 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		StyleAttributes style;
 		style["text-name"] = "[name]";
 		style["text-size"] = "12";
-		style["text-importance"] = "1";
+		style["text-importance"] = "4";
 		style["text-fill"] = "#0f0";
 		style["text-halo-fill"] = "#0a08";
 		style["text-halo-radius"] = "2.5";

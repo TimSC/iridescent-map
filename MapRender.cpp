@@ -69,8 +69,8 @@ class DrawTreeNode *DrawTreeNode::GetLayer(LayerDef &layerDef, int depth)
 class IFeatureConverterResult
 {
 public:
-	virtual void OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons) = 0;
-	virtual void OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons) = 0;
+	virtual void OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons, const TagMap &tags) = 0;
+	virtual void OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons, const TagMap &tags) = 0;
 	virtual void OutPoi(StyleDef &styleDef, double px, double py, const TagMap &tags) = 0;
 };
 
@@ -152,7 +152,7 @@ void FeatureConverter::Convert(int zoom, class FeatureStore &featureStore, class
 		}
 
 		for(size_t j=0; j < shapesOutput.size(); j++)
-			shapesOutput[j]->OutArea(styleDef, polygons);
+			shapesOutput[j]->OutArea(styleDef, polygons, area.tags);
 	}
 
 	//Render lines to draw tree
@@ -175,7 +175,7 @@ void FeatureConverter::Convert(int zoom, class FeatureStore &featureStore, class
 		lineAsPolygons.push_back(lineAsPolygon);
 
 		for(size_t j=0; j < shapesOutput.size(); j++)
-			shapesOutput[j]->OutLine(styleDef, lineAsPolygons);
+			shapesOutput[j]->OutLine(styleDef, lineAsPolygons, line.tags);
 
 	}
 
@@ -231,19 +231,19 @@ public:
 	FeaturesToDrawCmds(class DrawTreeNode *drawTree) : drawTree(drawTree) {};
 	virtual ~FeaturesToDrawCmds() {};
 	
-	void OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons);
-	void OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons);
+	void OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons, const TagMap &tags);
+	void OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons, const TagMap &tags);
 	void OutPoi(StyleDef &styleDef, double px, double py, const TagMap &tags) {};
 	void DrawToTree(StyleDef &styleDef, const std::vector<Polygon> &polygons);
 };
 
-void FeaturesToDrawCmds::OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons)
+void FeaturesToDrawCmds::OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons, const TagMap &tags)
 {
 	//Integrate shape into draw tree
 	this->DrawToTree(styleDef, polygons);
 }
 
-void FeaturesToDrawCmds::OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons)
+void FeaturesToDrawCmds::OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons, const TagMap &tags)
 {
 	//Integrate shape into draw tree
 	this->DrawToTree(styleDef, lineAsPolygons);
@@ -334,15 +334,53 @@ public:
 	FeaturesToLabelEngine(class LabelEngine *labelEngine) : labelEngine(labelEngine) {};
 	virtual ~FeaturesToLabelEngine() {};
 	
-	void OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons) {};
-	void OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons) {};
+	void OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons, const TagMap &tags);
+	void OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons, const TagMap &tags);
 	void OutPoi(StyleDef &styleDef, double px, double py, const TagMap &tags);
 };
 
+void FeaturesToLabelEngine::OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons, const TagMap &tags)
+{
+	//Transfer area markers and labels to label engine	
+	for(size_t j=0; j< styleDef.size(); j++)
+	{
+		StyleAndLayerDef &styleAndLayerDef = styleDef[j];
+		LayerDef &layerDef = styleAndLayerDef.first;
+		StyleAttributes &styleAttributes = styleAndLayerDef.second;
+
+		string textName = "";
+		TagMap::const_iterator attrIt = styleAttributes.find("text-name");
+		if(attrIt != styleAttributes.end()) {
+			textName = attrIt->second;
+		}
+		else
+			continue; //Don't draw if name not specified
+
+		//Get average position of outer ways
+		for(size_t i=0; i< polygons.size(); i++)
+		{
+			double px = 0.0, py = 0.0;
+			const Contour &outer = polygons[i].first;
+			for(size_t k=0;k<outer.size();k++)
+			{
+				px += outer[k].first;
+				py += outer[k].second;
+			}
+			px /= outer.size();
+			py /= outer.size();
+			poiLabels.push_back(PoiLabel(px, py, textName, tags, styleAttributes));
+		}
+	}
+}
+
+void FeaturesToLabelEngine::OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons, const TagMap &tags)
+{
+
+}
+
 void FeaturesToLabelEngine::OutPoi(StyleDef &styleDef, double px, double py, const TagMap &tags)
 {
-	//Transfer POI markers and labels to label engine
-	
+	//Transfer POI markers and labels to label engine	
 	for(size_t j=0; j< styleDef.size(); j++)
 	{
 		StyleAndLayerDef &styleAndLayerDef = styleDef[j];

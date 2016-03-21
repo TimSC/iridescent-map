@@ -182,6 +182,7 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 	{
 		class PoiLabel &label = poiLabels[i];
 
+		//Extract final draw parameters from tags and style
 		std::string &textName = label.textName;
 		std::string outString;
 		if(textName[0] == '[' && textName[textName.size()-1] == ']') 
