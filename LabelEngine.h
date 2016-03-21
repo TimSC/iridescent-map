@@ -38,6 +38,7 @@ public:
 };
 
 typedef std::map<int, std::vector<class LabelDef> > LabelsByImportance;
+void MergeLabelsByImportance(LabelsByImportance &mergeIntoThis, const LabelsByImportance &labelsToMerge);
 
 class PoiLabel
 {

@@ -422,11 +422,19 @@ void MapRender::RenderLabels(const std::vector<LabelsByImportance> &labelList,
 	if(labelList.size() != labelOffsets.size())
 		throw std::runtime_error("List lengths should match");
 	class LabelEngine labelEngine(this->output);
+	LabelsByImportance combinedLabels;
 	for(size_t i = 0; i< labelList.size(); i++)
 	{
 		const std::pair<double, double> &offset = labelOffsets[i];
-		labelEngine.WriteDrawCommands(labelList[i]);
+		//LabelsByImportance translatedLabels;
+		//TranslateLabelsByImportance(labelList[i], tx, ty, translatedLabels);
+		MergeLabelsByImportance(combinedLabels, labelList[i]);
 	}
+
+	LabelsByImportance deoverlappedLabels;
+	labelEngine.RemoveOverlapping(combinedLabels, deoverlappedLabels);
+
+	labelEngine.WriteDrawCommands(deoverlappedLabels);
 	this->output->Draw();
 }
 

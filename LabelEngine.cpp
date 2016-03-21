@@ -38,6 +38,24 @@ LabelDef& LabelDef::operator=(const LabelDef &arg)
 
 // **********************************************
 
+void MergeLabelsByImportance(LabelsByImportance &mergeIntoThis, const LabelsByImportance &labelsToMerge)
+{
+	for(LabelsByImportance::const_iterator itr = labelsToMerge.begin(); itr != labelsToMerge.end(); itr++)
+	{
+		int importance = itr->first;
+		const vector<class LabelDef> &lbs = itr->second;
+		for(size_t i=0; i<lbs.size(); i++)
+		{
+			LabelsByImportance::iterator mergeIt = mergeIntoThis.find(importance);
+			if(mergeIt == mergeIntoThis.end())
+				mergeIntoThis[importance] = vector<class LabelDef>();
+			mergeIntoThis[importance].push_back(lbs[i]);
+		}
+	}
+}
+
+// **********************************************
+
 LabelRect::LabelRect() : x(0.0), y(0.0), w(1.0), h(1.0)
 {
 	
@@ -173,11 +191,10 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 		backgroundProp.lineWidth=2.0;
 
 		//Add label definition to list
-		int importance = 0;
-		LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
+		LabelsByImportance::iterator it = organisedLabelsOut.find(label.importance);
 		if(it == organisedLabelsOut.end())
-			organisedLabelsOut[importance] = vector<class LabelDef>();
-		organisedLabelsOut[importance].push_back(LabelDef(labelRect, foregroundProp, backgroundProp, textStrs));
+			organisedLabelsOut[label.importance] = vector<class LabelDef>();
+		organisedLabelsOut[label.importance].push_back(LabelDef(labelRect, foregroundProp, backgroundProp, textStrs));
 	}
 }
 

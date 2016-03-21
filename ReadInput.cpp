@@ -91,7 +91,7 @@ int main()
 	mapRender.Render(12, featureStore, true, true, slippyTilesTransform, organisedLabels);
 	organisedLabelsMap[2035][1374] = organisedLabels;
 
-	// ** Render labels ** 	
+	// ** Render labels **
 	std::vector<LabelsByImportance> labelList;
 	std::vector<std::pair<double, double> > labelOffsets;
 	for(int y=1373; y<= 1375; y++)
