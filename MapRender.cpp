@@ -426,9 +426,9 @@ void MapRender::RenderLabels(const std::vector<LabelsByImportance> &labelList,
 	for(size_t i = 0; i< labelList.size(); i++)
 	{
 		const std::pair<double, double> &offset = labelOffsets[i];
-		//LabelsByImportance translatedLabels;
-		//TranslateLabelsByImportance(labelList[i], tx, ty, translatedLabels);
-		MergeLabelsByImportance(combinedLabels, labelList[i]);
+		LabelsByImportance translatedLabels;
+		TranslateLabelsByImportance(labelList[i], offset.first, offset.second, translatedLabels);
+		MergeLabelsByImportance(combinedLabels, translatedLabels);
 	}
 
 	LabelsByImportance deoverlappedLabels;

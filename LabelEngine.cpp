@@ -36,6 +36,18 @@ LabelDef& LabelDef::operator=(const LabelDef &arg)
 	labels = arg.labels;
 }
 
+void LabelDef::Translate(double tx, double ty)
+{
+	labelRect.x += tx;
+	labelRect.y += ty;
+	for(size_t i=0; i<labels.size();i++)
+	{
+		class TextLabel &tl = labels[i];
+		tl.x += tx;
+		tl.y += ty;
+	}
+}
+
 // **********************************************
 
 void MergeLabelsByImportance(LabelsByImportance &mergeIntoThis, const LabelsByImportance &labelsToMerge)
@@ -44,13 +56,30 @@ void MergeLabelsByImportance(LabelsByImportance &mergeIntoThis, const LabelsByIm
 	{
 		int importance = itr->first;
 		const vector<class LabelDef> &lbs = itr->second;
+		LabelsByImportance::iterator mergeIt = mergeIntoThis.find(importance);
+		if(mergeIt == mergeIntoThis.end())
+			mergeIntoThis[importance] = vector<class LabelDef>();
+		vector<class LabelDef> &layer = mergeIntoThis[importance];
+		for(size_t i=0; i<lbs.size(); i++)
+			layer.push_back(lbs[i]);
+	}
+}
+
+void TranslateLabelsByImportance(const LabelsByImportance &labelsIn, double tx, double ty, LabelsByImportance &labelsOut)
+{
+	labelsOut.clear();
+	for(LabelsByImportance::const_iterator itr = labelsIn.begin(); itr != labelsIn.end(); itr++)
+	{
+		int importance = itr->first;
+		const vector<class LabelDef> &lbs = itr->second;
+		vector<class LabelDef> layer;
 		for(size_t i=0; i<lbs.size(); i++)
 		{
-			LabelsByImportance::iterator mergeIt = mergeIntoThis.find(importance);
-			if(mergeIt == mergeIntoThis.end())
-				mergeIntoThis[importance] = vector<class LabelDef>();
-			mergeIntoThis[importance].push_back(lbs[i]);
+			class LabelDef labelCpy = lbs[i];
+			labelCpy.Translate(tx, ty);
+			layer.push_back(labelCpy);
 		}
+		labelsOut[importance] = layer;
 	}
 }
 

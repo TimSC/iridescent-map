@@ -35,10 +35,13 @@ public:
 	LabelDef(const class LabelDef &a);
 	virtual ~LabelDef();
 	LabelDef& operator=(const LabelDef &arg);
+
+	void Translate(double tx, double ty);
 };
 
 typedef std::map<int, std::vector<class LabelDef> > LabelsByImportance;
 void MergeLabelsByImportance(LabelsByImportance &mergeIntoThis, const LabelsByImportance &labelsToMerge);
+void TranslateLabelsByImportance(const LabelsByImportance &labelsIn, double tx, double ty, LabelsByImportance &labelsOut);
 
 class PoiLabel
 {
