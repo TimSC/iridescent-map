@@ -1,5 +1,6 @@
 #include "LabelEngine.h"
 #include <iostream>
+#include <stdlib.h>
 using namespace std;
 
 LabelDef::LabelDef()
@@ -128,18 +129,16 @@ void LabelRect::Print() const
 	cout << x << "," << y << "," << w << "," << h << endl;
 }
 
-
 // ***************************************************
 
 PoiLabel::PoiLabel()
 {
 	sx = 0.0;
 	sy = 0.0;
-	importance = 0;
 }
 
-PoiLabel::PoiLabel(double sx, double sy, const std::string &textName, const TagMap &tags, int importance):
-	sx(sx), sy(sy), textName(textName), tags(tags), importance(importance)
+PoiLabel::PoiLabel(double sx, double sy, const std::string &textName, const TagMap &tags, const StyleAttributes &styleAttributes):
+	sx(sx), sy(sy), textName(textName), tags(tags), styleAttributes(styleAttributes)
 {
 	
 }
@@ -160,7 +159,7 @@ PoiLabel& PoiLabel::operator=(const PoiLabel &arg)
 	sy = arg.sy;
 	textName = arg.textName;
 	tags = arg.tags;
-	importance = arg.importance;
+	styleAttributes = arg.styleAttributes;
 }
 
 // *******************************************************
@@ -185,7 +184,8 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 
 		std::string &textName = label.textName;
 		std::string outString;
-		if(textName[0] == '[' && textName[textName.size()-1] == ']') {
+		if(textName[0] == '[' && textName[textName.size()-1] == ']') 
+		{
 			std::string keyName(&textName[1], textName.size()-2);
 			TagMap::const_iterator it = label.tags.find(keyName);
 			if(it == label.tags.end()) continue;
@@ -194,9 +194,36 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 		else
 			outString = textName;
 
+		int textSize = 9;
+		StyleAttributes::const_iterator paramIt = label.styleAttributes.find("text-size");
+		if(paramIt != label.styleAttributes.end())
+			textSize = atoi(paramIt->second.c_str());
+
+		int importance = 0;
+		paramIt = label.styleAttributes.find("text-importance");
+		if(paramIt != label.styleAttributes.end())
+			importance = atoi(paramIt->second.c_str());
+
+		double fillR=1.0, fillG=1.0, fillB=1.0, fillA = 1.0;
+		paramIt = label.styleAttributes.find("text-fill");
+		if(paramIt != label.styleAttributes.end())
+			ColourStringToRgba(paramIt->second.c_str(), fillR, fillG, fillB, fillA);
+
+		double haloR=0.0, haloG=0.0, haloB=0.0, haloA=1.0;
+		paramIt = label.styleAttributes.find("text-halo-fill");
+		if(paramIt != label.styleAttributes.end())
+			ColourStringToRgba(paramIt->second.c_str(), haloR, haloG, haloB, haloA);
+
+		double haloWidth=2.0;
+		paramIt = label.styleAttributes.find("text-halo-radius");
+		if(paramIt != label.styleAttributes.end())
+			haloWidth = atof(paramIt->second.c_str());
+
 		//Get bounds
 		double width=0.0, height=0.0;
-		class TextProperties foregroundProp(1.0,1.0,1.0);
+		class TextProperties foregroundProp(fillR, fillG, fillB);
+		foregroundProp.fontSize = textSize;
+
 		if(this->output != NULL)
 		{			
 			int ret = this->output->GetTextExtents(outString.c_str(), foregroundProp, 
@@ -214,16 +241,17 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 
 		class LabelRect labelRect(lx, ly, width, height);
 
-		class TextProperties backgroundProp(0.0,0.0,0.0);
-		backgroundProp.a = 0.5;
+		class TextProperties backgroundProp(haloR, haloG, haloB);
+		backgroundProp.fontSize = textSize;
+		backgroundProp.a = haloA;
 		backgroundProp.outline = true;
-		backgroundProp.lineWidth=2.0;
+		backgroundProp.lineWidth=haloWidth;
 
 		//Add label definition to list
-		LabelsByImportance::iterator it = organisedLabelsOut.find(label.importance);
+		LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
 		if(it == organisedLabelsOut.end())
-			organisedLabelsOut[label.importance] = vector<class LabelDef>();
-		organisedLabelsOut[label.importance].push_back(LabelDef(labelRect, foregroundProp, backgroundProp, textStrs));
+			organisedLabelsOut[importance] = vector<class LabelDef>();
+		organisedLabelsOut[importance].push_back(LabelDef(labelRect, foregroundProp, backgroundProp, textStrs));
 	}
 }
 

@@ -20,4 +20,6 @@ public:
 	int GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, StyleDef &styleDefOut);
 };
 
+int ColourStringToRgba(const char *colStr, double &r, double &g, double &b, double &alpha);
+
 #endif //_STYLE_H

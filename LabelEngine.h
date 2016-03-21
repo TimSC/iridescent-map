@@ -3,6 +3,7 @@
 
 #include "drawlib/drawlib.h"
 #include "cppo5m/o5m.h"
+#include "Style.h"
 
 class LabelRect
 {
@@ -50,10 +51,10 @@ public:
 	double sy;
 	std::string textName;
 	TagMap tags;
-	int importance;
+	StyleAttributes styleAttributes;
 
 	PoiLabel();
-	PoiLabel(double sx, double sy, const std::string &textName, const TagMap &tags, int importance);
+	PoiLabel(double sx, double sy, const std::string &textName, const TagMap &tags, const StyleAttributes &styleAttributes);
 	PoiLabel(const class PoiLabel &a);
 	virtual ~PoiLabel();
 	PoiLabel& operator=(const PoiLabel &arg);

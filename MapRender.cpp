@@ -7,9 +7,6 @@
 #include "LabelEngine.h"
 using namespace std;
 
-//Prototypes
-int ColourStringToRgb(const char *colStr, double &r, double &g, double &b);
-
 DrawTreeNode::DrawTreeNode()
 {
 
@@ -264,7 +261,7 @@ void FeaturesToDrawCmds::DrawToTree(StyleDef &styleDef, const std::vector<Polygo
 		class ShapeProperties prop(double(rand()%100) / 100.0, double(rand()%100) / 100.0, double(rand()%100) / 100.0);
 		TagMap::const_iterator colIt = styleAttributes.find("polygon-fill");
 		if(colIt != styleAttributes.end()) {
-			int colOk = ColourStringToRgb(colIt->second.c_str(), prop.r, prop.g, prop.b);
+			int colOk = ColourStringToRgba(colIt->second.c_str(), prop.r, prop.g, prop.b, prop.a);
 			if(!colOk) continue;
 		}
 		else
@@ -289,7 +286,7 @@ void FeaturesToDrawCmds::DrawToTree(StyleDef &styleDef, const std::vector<Polygo
 
 		TagMap::const_iterator attrIt = styleAttributes.find("line-color");
 		if(attrIt != styleAttributes.end()) {
-			int colOk = ColourStringToRgb(attrIt->second.c_str(), lineProp1.r, lineProp1.g, lineProp1.b);
+			int colOk = ColourStringToRgba(attrIt->second.c_str(), lineProp1.r, lineProp1.g, lineProp1.b, lineProp1.a);
 			if(!colOk) continue;
 		}
 		else
@@ -358,11 +355,9 @@ void FeaturesToLabelEngine::OutPoi(StyleDef &styleDef, double px, double py, con
 			textName = attrIt->second;
 		}
 		else
-			continue; //Don't draw if colour not specified
-
-		int importance = 0;
+			continue; //Don't draw if name not specified
 		
-		poiLabels.push_back(PoiLabel(px, py, textName, tags, importance));
+		poiLabels.push_back(PoiLabel(px, py, textName, tags, styleAttributes));
 	}
 }
 
@@ -438,29 +433,4 @@ void MapRender::RenderLabels(const std::vector<LabelsByImportance> &labelList,
 	this->output->Draw();
 }
 
-int ColourStringToRgb(const char *colStr, double &r, double &g, double &b)
-{
-	if(colStr[0] == '\0')
-		return 0;
-
-	if(colStr[0] == '#')
-	{
-		if(strlen(colStr) == 7)
-		{
-			string sr(&colStr[1], 2);
-			string sg(&colStr[3], 2);
-			string sb(&colStr[5], 2);
-			unsigned int tmp;
-			sscanf(sr.c_str(), "%x", &tmp);
-			r = tmp / 255.0;
-			sscanf(sg.c_str(), "%x", &tmp);
-			g = tmp / 255.0;
-			sscanf(sb.c_str(), "%x", &tmp);
-			b = tmp / 255.0;
-			return 1;
-		}
-
-	}
-	return 0;
-}
 
