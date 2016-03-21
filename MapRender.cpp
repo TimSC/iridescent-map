@@ -332,6 +332,7 @@ class FeaturesToLabelEngine : public IFeatureConverterResult
 {
 public:
 	class LabelEngine *labelEngine;
+	std::vector<class PoiLabel> poiLabels;
 
 	FeaturesToLabelEngine(class LabelEngine *labelEngine) : labelEngine(labelEngine) {};
 	virtual ~FeaturesToLabelEngine() {};
@@ -344,6 +345,7 @@ public:
 void FeaturesToLabelEngine::OutPoi(StyleDef &styleDef, double px, double py, const TagMap &tags)
 {
 	//Transfer POI markers and labels to label engine
+	
 	for(size_t j=0; j< styleDef.size(); j++)
 	{
 		StyleAndLayerDef &styleAndLayerDef = styleDef[j];
@@ -359,7 +361,8 @@ void FeaturesToLabelEngine::OutPoi(StyleDef &styleDef, double px, double py, con
 			continue; //Don't draw if colour not specified
 
 		int importance = 0;
-		this->labelEngine->AddPoiLabel(px, py, textName, tags, importance);
+		
+		poiLabels.push_back(PoiLabel(px, py, textName, tags, importance));
 	}
 }
 
@@ -408,7 +411,7 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore,
 	{
 		organisedLabelsOut.clear();
 		LabelsByImportance organisedLabelsTmp;
-		labelEngine.OrganiseLabels(organisedLabelsTmp);
+		labelEngine.LabelPoisToStyledLabel(featuresToLabelEngine.poiLabels, organisedLabelsTmp);
 		labelEngine.RemoveOverlapping(organisedLabelsTmp, organisedLabelsOut);
 	}
 }

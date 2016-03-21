@@ -88,10 +88,11 @@ PoiLabel::PoiLabel()
 {
 	sx = 0.0;
 	sy = 0.0;
+	importance = 0;
 }
 
-PoiLabel::PoiLabel(double sx, double sy, const std::string &textName, const TagMap &tags):
-	sx(sx), sy(sy), textName(textName), tags(tags)
+PoiLabel::PoiLabel(double sx, double sy, const std::string &textName, const TagMap &tags, int importance):
+	sx(sx), sy(sy), textName(textName), tags(tags), importance(importance)
 {
 	
 }
@@ -112,6 +113,7 @@ PoiLabel& PoiLabel::operator=(const PoiLabel &arg)
 	sy = arg.sy;
 	textName = arg.textName;
 	tags = arg.tags;
+	importance = arg.importance;
 }
 
 // *******************************************************
@@ -127,12 +129,12 @@ LabelEngine::~LabelEngine()
 
 }
 
-void LabelEngine::OrganiseLabels(LabelsByImportance &organisedLabelsOut)
+void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels, LabelsByImportance &organisedLabelsOut)
 {
 	organisedLabelsOut.clear();
-	for(size_t i=0;i < this->poiLabels.size(); i++)
+	for(size_t i=0;i < poiLabels.size(); i++)
 	{
-		class PoiLabel &label = this->poiLabels[i];
+		class PoiLabel &label = poiLabels[i];
 
 		std::string &textName = label.textName;
 		std::string outString;
@@ -247,18 +249,4 @@ void LabelEngine::WriteDrawCommands(const LabelsByImportance &organisedLabels)
 	}
 }
 
-void LabelEngine::AddPolygonLabel(const std::vector<Polygon> &polygons, std::string &textName, const TagMap &tags)
-{
-
-}
-
-void LabelEngine::AddLineLabel(const Contour &line, std::string &textName, const TagMap &tags)
-{
-
-}
-
-void LabelEngine::AddPoiLabel(double sx, double sy, std::string &textName, const TagMap &tags, int importance)
-{
-	this->poiLabels.push_back(PoiLabel(sx, sy, textName, tags));
-}
 

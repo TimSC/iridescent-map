@@ -46,9 +46,10 @@ public:
 	double sy;
 	std::string textName;
 	TagMap tags;
+	int importance;
 
 	PoiLabel();
-	PoiLabel(double sx, double sy, const std::string &textName, const TagMap &tags);
+	PoiLabel(double sx, double sy, const std::string &textName, const TagMap &tags, int importance);
 	PoiLabel(const class PoiLabel &a);
 	virtual ~PoiLabel();
 	PoiLabel& operator=(const PoiLabel &arg);
@@ -58,19 +59,14 @@ class LabelEngine
 {
 protected:
 	class IDrawLib *output; //Borrowed reference
-	std::vector<class PoiLabel> poiLabels;
 
 public:
 	LabelEngine(class IDrawLib *output);
 	virtual ~LabelEngine();
 
-	void OrganiseLabels(LabelsByImportance &organisedLabelsOut);
+	void LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels, LabelsByImportance &organisedLabelsOut);
 	void WriteDrawCommands(const LabelsByImportance &organisedLabels);
 	void RemoveOverlapping(const LabelsByImportance &organisedLabelsTmp, LabelsByImportance &organisedLabelsOut);
-
-	void AddPolygonLabel(const std::vector<Polygon> &polygons, std::string &textName, const TagMap &tags);
-	void AddLineLabel(const Contour &line, std::string &textName, const TagMap &tags);
-	void AddPoiLabel(double sx, double sy, std::string &textName, const TagMap &tags, int importance);
 };
 
 #endif //_LABEL_ENGINE_H
