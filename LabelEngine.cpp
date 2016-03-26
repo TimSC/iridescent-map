@@ -39,8 +39,7 @@ LabelDef& LabelDef::operator=(const LabelDef &arg)
 
 void LabelDef::Translate(double tx, double ty)
 {
-	labelRect.x += tx;
-	labelRect.y += ty;
+	labelRect.Translate(tx, ty);
 	for(size_t i=0; i<labels.size();i++)
 	{
 		class TextLabel &tl = labels[i];
@@ -86,12 +85,12 @@ void TranslateLabelsByImportance(const LabelsByImportance &labelsIn, double tx, 
 
 // **********************************************
 
-LabelRect::LabelRect() : x(0.0), y(0.0), w(1.0), h(1.0)
+LabelRect::LabelRect()
 {
 	
 }
 
-LabelRect::LabelRect(double x, double y, double w, double h) : x(x), y(y), w(w), h(h)
+LabelRect::LabelRect(const TwistedTriangles &bounds) : bounds(bounds)
 {
 
 }
@@ -108,25 +107,28 @@ LabelRect::~LabelRect()
 
 LabelRect& LabelRect::operator=(const LabelRect &arg)
 {
-	x = arg.x;
-	y = arg.y;
-	w = arg.w;
-	h = arg.h;
+	bounds = arg.bounds;
 	return *this;
 }
 
 bool LabelRect::Overlaps(const LabelRect &arg) const
 {
-	if (x + w < arg.x) return false;
+	/*if (x + w < arg.x) return false;
 	if (x >= arg.x + arg.w) return false;
 	if (y + h < arg.y) return false;
-	if (y >= arg.y + arg.w) return false;
+	if (y >= arg.y + arg.w) return false;*/
+	return false;
 	return true;
 }
 
 void LabelRect::Print() const
 {
-	cout << x << "," << y << "," << w << "," << h << endl;
+	//cout << x << "," << y << "," << w << "," << h << endl;
+}
+
+void LabelRect::Translate(double tx, double ty)
+{
+	
 }
 
 // ***************************************************
@@ -221,31 +223,29 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 			haloWidth = atof(paramIt->second.c_str());
 
 		//Get bounds
-		double width=0.0, height=0.0;
 		class TextProperties foregroundProp(fillR, fillG, fillB);
 		foregroundProp.fontSize = textSize;
 
+		double lx = label.sx;
+		double ly = label.sy;
+		TextLabel outLabel(outString, lx, ly);
+		TwistedTriangles bounds;
 		if(this->output != NULL)
-		{			
-			int ret = this->output->GetTextExtents(outString.c_str(), foregroundProp, 
-				width, height);
-			if(ret != 0)
-			{
-				width=0.0, height=0.0;
-			}
+		{
+			this->output->GetTriangleBoundsText(outLabel, foregroundProp, 
+				bounds);
 		}
 	
 		std::vector<class TextLabel> textStrs;
-		double lx = label.sx - width / 2.0;
-		double ly = label.sy;
-		textStrs.push_back(TextLabel(outString, lx, ly));
+		textStrs.push_back(outLabel);
 
-		class LabelRect labelRect(lx, ly, width, height);
+		class LabelRect labelRect(bounds);
 
 		class TextProperties backgroundProp(haloR, haloG, haloB);
 		backgroundProp.fontSize = textSize;
-		backgroundProp.a = haloA;
+		backgroundProp.la = haloA;
 		backgroundProp.outline = true;
+		backgroundProp.fill = false;
 		backgroundProp.lineWidth=haloWidth;
 
 		//Add label definition to list

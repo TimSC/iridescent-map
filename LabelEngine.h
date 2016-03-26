@@ -8,16 +8,17 @@
 class LabelRect
 {
 public:
-	double x, y, w, h;
+	TwistedTriangles bounds;
 
 	LabelRect();
-	LabelRect(double x, double y, double w, double h);
+	LabelRect(const TwistedTriangles &bounds);
 	LabelRect(const class LabelRect &a);
 	virtual ~LabelRect();
 	LabelRect& operator=(const LabelRect &arg);
 
 	bool Overlaps(const LabelRect &arg) const;
 	void Print() const;
+	void Translate(double tx, double ty);
 };
 
 class LabelDef
