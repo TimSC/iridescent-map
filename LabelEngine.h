@@ -5,32 +5,30 @@
 #include "cppo5m/o5m.h"
 #include "Style.h"
 
-class LabelRect
+class LabelBounds
 {
-public:
+protected:
 	TwistedTriangles bounds;
 
-	LabelRect();
-	LabelRect(const TwistedTriangles &bounds);
-	LabelRect(const class LabelRect &a);
-	virtual ~LabelRect();
-	LabelRect& operator=(const LabelRect &arg);
+public:
+	LabelBounds(const TwistedTriangles &bounds);
+	LabelBounds(const class LabelBounds &a);
+	virtual ~LabelBounds();
+	LabelBounds& operator=(const LabelBounds &arg);
 
-	bool Overlaps(const LabelRect &arg) const;
-	void Print() const;
+	bool Overlaps(const LabelBounds &arg) const;
 	void Translate(double tx, double ty);
 };
 
 class LabelDef
 {
 public:
-	class LabelRect labelRect;
+	class LabelBounds labelBounds;
 	class TextProperties foregroundProp;
 	class TextProperties backgroundProp;
 	std::vector<class TextLabel> labels;
 
-	LabelDef();
-	LabelDef(const class LabelRect &labelRect,
+	LabelDef(const class LabelBounds &labelBounds,
 		const class TextProperties &foregroundProp,
 		const class TextProperties &backgroundProp,
 		const std::vector<class TextLabel> &labels);

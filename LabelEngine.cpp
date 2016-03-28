@@ -1,17 +1,13 @@
 #include "LabelEngine.h"
 #include <iostream>
 #include <stdlib.h>
+#include "TriTri2d.h"
 using namespace std;
 
-LabelDef::LabelDef()
-{
-
-}
-
-LabelDef::LabelDef(const class LabelRect &labelRect,
+LabelDef::LabelDef(const class LabelBounds &labelBounds,
 		const class TextProperties &foregroundProp,
 		const class TextProperties &backgroundProp,
-		const std::vector<class TextLabel> &labels) : labelRect(labelRect),
+		const std::vector<class TextLabel> &labels) : labelBounds(labelBounds),
 		foregroundProp(foregroundProp),
 		backgroundProp(backgroundProp),
 		labels(labels)
@@ -19,7 +15,7 @@ LabelDef::LabelDef(const class LabelRect &labelRect,
 
 }
 
-LabelDef::LabelDef(const class LabelDef &a)
+LabelDef::LabelDef(const class LabelDef &a) : labelBounds(a.labelBounds)
 {
 	*this = a;
 }
@@ -31,7 +27,7 @@ LabelDef::~LabelDef()
 
 LabelDef& LabelDef::operator=(const LabelDef &arg)
 {
-	labelRect = arg.labelRect;
+	labelBounds = arg.labelBounds;
 	foregroundProp = arg.foregroundProp;
 	backgroundProp = arg.backgroundProp;
 	labels = arg.labels;
@@ -39,7 +35,7 @@ LabelDef& LabelDef::operator=(const LabelDef &arg)
 
 void LabelDef::Translate(double tx, double ty)
 {
-	labelRect.Translate(tx, ty);
+	labelBounds.Translate(tx, ty);
 	for(size_t i=0; i<labels.size();i++)
 	{
 		class TextLabel &tl = labels[i];
@@ -85,50 +81,60 @@ void TranslateLabelsByImportance(const LabelsByImportance &labelsIn, double tx, 
 
 // **********************************************
 
-LabelRect::LabelRect()
-{
-	
-}
-
-LabelRect::LabelRect(const TwistedTriangles &bounds) : bounds(bounds)
+LabelBounds::LabelBounds(const TwistedTriangles &bounds) : bounds(bounds)
 {
 
 }
 
-LabelRect::LabelRect(const class LabelRect &a)
-{
-	*this = a;
-}
-
-LabelRect::~LabelRect()
+LabelBounds::LabelBounds(const class LabelBounds &a) : bounds(a.bounds)
 {
 
 }
 
-LabelRect& LabelRect::operator=(const LabelRect &arg)
+LabelBounds::~LabelBounds()
+{
+
+}
+
+LabelBounds& LabelBounds::operator=(const LabelBounds &arg)
 {
 	bounds = arg.bounds;
 	return *this;
 }
 
-bool LabelRect::Overlaps(const LabelRect &arg) const
+bool LabelBounds::Overlaps(const LabelBounds &arg) const
 {
-	/*if (x + w < arg.x) return false;
+	/*//Old rectangle collision code
+	if (x + w < arg.x) return false;
 	if (x >= arg.x + arg.w) return false;
 	if (y + h < arg.y) return false;
 	if (y >= arg.y + arg.w) return false;*/
+
+	for(size_t i = 0; i < this->bounds.size(); i++)
+	{
+		const std::vector<Point> &tri1 = this->bounds[i];
+		for(size_t j = 0; j < arg.bounds.size(); j++)
+		{
+			const std::vector<Point> &tri2 = arg.bounds[j];
+			if(TriTri2D(&tri1[0], &tri2[0])) return true;
+		}
+	}
+
 	return false;
-	return true;
 }
 
-void LabelRect::Print() const
+void LabelBounds::Translate(double tx, double ty)
 {
-	//cout << x << "," << y << "," << w << "," << h << endl;
-}
-
-void LabelRect::Translate(double tx, double ty)
-{
-	
+	for(size_t i = 0; i < this->bounds.size(); i++)
+	{
+		std::vector<Point> &tri = this->bounds[i];
+		for(size_t j = 0; j < this->bounds.size(); j++)
+		{
+			Point &pt = tri[j];
+			pt.first += tx;
+			pt.second += ty;
+		}
+	}
 }
 
 // ***************************************************
@@ -239,7 +245,7 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 		std::vector<class TextLabel> textStrs;
 		textStrs.push_back(outLabel);
 
-		class LabelRect labelRect(bounds);
+		class LabelBounds labelBounds(bounds);
 
 		class TextProperties backgroundProp(haloR, haloG, haloB);
 		backgroundProp.fontSize = textSize;
@@ -252,7 +258,7 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 		LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
 		if(it == organisedLabelsOut.end())
 			organisedLabelsOut[importance] = vector<class LabelDef>();
-		organisedLabelsOut[importance].push_back(LabelDef(labelRect, foregroundProp, backgroundProp, textStrs));
+		organisedLabelsOut[importance].push_back(LabelDef(labelBounds, foregroundProp, backgroundProp, textStrs));
 	}
 }
 
@@ -263,7 +269,7 @@ bool LabelOverlaps(const class LabelDef &label, const LabelsByImportance existin
 		const vector<class LabelDef> &lbs = itr->second;
 		for(size_t j=0; j<lbs.size(); j++)
 		{
-			if(label.labelRect.Overlaps(lbs[j].labelRect))
+			if(label.labelBounds.Overlaps(lbs[j].labelBounds))
 				return true;
 		}
 	}
