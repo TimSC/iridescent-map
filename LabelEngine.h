@@ -9,6 +9,8 @@ class LabelBounds
 {
 protected:
 	TwistedTriangles bounds;
+	double minX, minY, maxX, maxY;
+	void UpdateRectBbox();
 
 public:
 	LabelBounds();

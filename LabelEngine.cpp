@@ -100,7 +100,7 @@ void ValidateTriangles(const TwistedTriangles &bounds)
 
 LabelBounds::LabelBounds()
 {
-
+	this->minX = 0.0; this->minY = 0.0; this->maxX = 0.0; this->maxY = 0.0;
 }
 
 LabelBounds::LabelBounds(const TwistedTriangles &bounds) : bounds(bounds)
@@ -108,6 +108,7 @@ LabelBounds::LabelBounds(const TwistedTriangles &bounds) : bounds(bounds)
 #ifdef ENABLE_TRI_VALIDATION
 	ValidateTriangles(this->bounds);
 #endif //ENABLE_TRI_VALIDATION
+	this->UpdateRectBbox();
 }
 
 LabelBounds::LabelBounds(const class LabelBounds &a)
@@ -120,23 +121,61 @@ LabelBounds::~LabelBounds()
 
 }
 
+void LabelBounds::UpdateRectBbox()
+{
+	bool boundsSet = false;
+	for(size_t i = 0; i < this->bounds.size(); i++)
+	{
+		const std::vector<Point> &tri = this->bounds[i];
+		for(size_t j=0; j < tri.size(); j++)
+		{
+			const Point &pt = tri[j];
+			if(boundsSet)
+			{
+				if(pt.first > this->maxX)
+					this->maxX = pt.first;
+				if(pt.first < this->minX)
+					this->minX = pt.first;
+				if(pt.second > this->maxY)
+					this->maxY = pt.second;
+				if(pt.second < this->minY)
+					this->minY = pt.second;
+			}
+			else
+			{
+				this->minX = pt.first;
+				this->minY = pt.second;
+				this->maxX = pt.first;
+				this->maxY = pt.second;
+				boundsSet = true;
+			}
+		}
+	}
+	if(!boundsSet)
+	{
+		this->minX = 0.0; this->minY = 0.0; this->maxX = 0.0; this->maxY = 0.0;
+	}
+}
+
 LabelBounds& LabelBounds::operator=(const LabelBounds &arg)
 {
 	this->bounds = arg.bounds;
 #ifdef ENABLE_TRI_VALIDATION
 	ValidateTriangles(this->bounds);
 #endif //ENABLE_TRI_VALIDATION
+	this->UpdateRectBbox();
 	return *this;
 }
 
 bool LabelBounds::Overlaps(const LabelBounds &arg) const
 {
-	/*//Old rectangle collision code
-	if (x + w < arg.x) return false;
-	if (x >= arg.x + arg.w) return false;
-	if (y + h < arg.y) return false;
-	if (y >= arg.y + arg.w) return false;*/
+	//Rough rectangle collision code (fast but inexact)
+	if (maxX < arg.minX) return false;
+	if (minX >= arg.maxX) return false;
+	if (maxY < arg.minY) return false;
+	if (minY >= arg.maxY) return false;
 
+	//Exact triangle collision code
 	for(size_t i = 0; i < this->bounds.size(); i++)
 	{
 		const std::vector<Point> &tri1 = this->bounds[i];
