@@ -258,6 +258,7 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 		//Get bounds
 		class TextProperties foregroundProp(fillR, fillG, fillB);
 		foregroundProp.fontSize = textSize;
+		foregroundProp.halign = 0.5;
 
 		double lx = label.sx;
 		double ly = label.sy;
@@ -280,6 +281,7 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 		backgroundProp.outline = true;
 		backgroundProp.fill = false;
 		backgroundProp.lineWidth=haloWidth;
+		backgroundProp.halign = 0.5;
 
 		//Add label definition to list
 		LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
