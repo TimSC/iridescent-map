@@ -11,6 +11,7 @@ protected:
 	TwistedTriangles bounds;
 
 public:
+	LabelBounds();
 	LabelBounds(const TwistedTriangles &bounds);
 	LabelBounds(const class LabelBounds &a);
 	virtual ~LabelBounds();

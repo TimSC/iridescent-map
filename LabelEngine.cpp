@@ -98,6 +98,11 @@ void ValidateTriangles(const TwistedTriangles &bounds)
 
 // **********************************************
 
+LabelBounds::LabelBounds()
+{
+
+}
+
 LabelBounds::LabelBounds(const TwistedTriangles &bounds) : bounds(bounds)
 {
 #ifdef ENABLE_TRI_VALIDATION
@@ -105,9 +110,9 @@ LabelBounds::LabelBounds(const TwistedTriangles &bounds) : bounds(bounds)
 #endif //ENABLE_TRI_VALIDATION
 }
 
-LabelBounds::LabelBounds(const class LabelBounds &a) : bounds(a.bounds)
+LabelBounds::LabelBounds(const class LabelBounds &a)
 {
-
+	*this = a;
 }
 
 LabelBounds::~LabelBounds()
@@ -135,22 +140,9 @@ bool LabelBounds::Overlaps(const LabelBounds &arg) const
 	for(size_t i = 0; i < this->bounds.size(); i++)
 	{
 		const std::vector<Point> &tri1 = this->bounds[i];
-#ifdef ENABLE_TRI_VALIDATION
-		if(tri1.size() != 3)
-			throw std::runtime_error("triange must have three sides");
-		double det1 = Det2D(tri1[0], tri1[1], tri1[2]);
-		if(det1 < 0.0)
-			throw std::runtime_error("triangle 1 has wrong winding direction");
-#endif //ENABLE_TRI_VALIDATION
 		for(size_t j = 0; j < arg.bounds.size(); j++)
 		{
 			const std::vector<Point> &tri2 = arg.bounds[j];
-#ifdef ENABLE_TRI_VALIDATION
-			if(tri2.size() != 3)
-				throw std::runtime_error("triange must have three sides");
-			if(Det2D(tri2[0], tri2[1], tri2[2]) < 0.0)
-				throw std::runtime_error("triangle 2 has wrong winding direction");
-#endif //ENABLE_TRI_VALIDATION
 			if(TriTri2D(&tri1[0], &tri2[0])) return true;
 		}
 	}
@@ -163,7 +155,7 @@ void LabelBounds::Translate(double tx, double ty)
 	for(size_t i = 0; i < this->bounds.size(); i++)
 	{
 		std::vector<Point> &tri = this->bounds[i];
-		for(size_t j = 0; j < this->bounds.size(); j++)
+		for(size_t j = 0; j < tri.size(); j++)
 		{
 			Point &pt = tri[j];
 			pt.first += tx;
