@@ -6,13 +6,6 @@
 #include "TriTri2d.h"
 using namespace std;
 
-inline double Det2D(const TriPoint &p1, const TriPoint &p2, const TriPoint &p3) 
-{
-	return +p1.first*(p2.second-p3.second)
-		+p2.first*(p3.second-p1.second)
-		+p3.first*(p1.second-p2.second);
-}
-
 bool BoundaryCollideChk(const TriPoint &p1, const TriPoint &p2, const TriPoint &p3, double eps)
 {
 	return Det2D(p1, p2, p3) < eps;
@@ -27,11 +20,13 @@ bool TriTri2D(const TriPoint *t1,
 	const TriPoint *t2,
 	double eps, bool onBoundary)
 {
+#ifdef ENABLE_TRI_VALIDATION
 	//Trangles must be expressed anti-clockwise
 	if(Det2D(t1[0], t1[1], t1[2]) < 0.0)
 		throw std::runtime_error("triangle 1 has wrong winding direction");
 	if(Det2D(t2[0], t2[1], t2[2]) < 0.0)
 		throw std::runtime_error("triangle 2 has wrong winding direction");
+#endif //ENABLE_TRI_VALIDATION
 
 	bool (*chkEdge)(const TriPoint &, const TriPoint &, const TriPoint &, double) = NULL;
 	if(onBoundary) //Points on the boundary are considered as colliding
