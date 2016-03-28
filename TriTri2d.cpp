@@ -13,12 +13,6 @@ inline double Det2D(const TriPoint &p1, const TriPoint &p2, const TriPoint &p3)
 		+p3.first*(p1.second-p2.second);
 }
 
-inline void CheckTriWinding(const TriPoint &p1, const TriPoint &p2, const TriPoint &p3)
-{
-	if(Det2D(p1, p2, p3) < 0.0)
-		throw std::runtime_error("triangle has wrong winding direction");
-}
-
 bool BoundaryCollideChk(const TriPoint &p1, const TriPoint &p2, const TriPoint &p3, double eps)
 {
 	return Det2D(p1, p2, p3) < eps;
@@ -34,8 +28,10 @@ bool TriTri2D(const TriPoint *t1,
 	double eps, bool onBoundary)
 {
 	//Trangles must be expressed anti-clockwise
-	CheckTriWinding(t1[0], t1[1], t1[2]);
-	CheckTriWinding(t2[0], t2[1], t2[2]);
+	if(Det2D(t1[0], t1[1], t1[2]) < 0.0)
+		throw std::runtime_error("triangle 1 has wrong winding direction");
+	if(Det2D(t2[0], t2[1], t2[2]) < 0.0)
+		throw std::runtime_error("triangle 2 has wrong winding direction");
 
 	bool (*chkEdge)(const TriPoint &, const TriPoint &, const TriPoint &, double) = NULL;
 	if(onBoundary) //Points on the boundary are considered as colliding
