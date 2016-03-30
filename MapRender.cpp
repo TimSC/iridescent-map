@@ -70,7 +70,7 @@ class IFeatureConverterResult
 {
 public:
 	virtual void OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons, const TagMap &tags) = 0;
-	virtual void OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons, const TagMap &tags) = 0;
+	virtual void OutLine(StyleDef &styleDef, const Contours &lineAsPolygons, const TagMap &tags) = 0;
 	virtual void OutPoi(StyleDef &styleDef, double px, double py, const TagMap &tags) = 0;
 };
 
@@ -158,11 +158,7 @@ void FeatureConverter::Convert(int zoom, class FeatureStore &featureStore, class
 	//Render lines to draw tree
 	for(size_t i=0;i<featureStore.lines.size();i++)
 	{
-		//Pretend these are polygons
-		std::vector<Polygon> lineAsPolygons;
 		Contour line1;
-		Contours innersEmpty;
-
 		class FeatureLine &line = featureStore.lines[i];
 
 		StyleDef styleDef;
@@ -171,11 +167,11 @@ void FeatureConverter::Convert(int zoom, class FeatureStore &featureStore, class
 
 		IdLatLonList &shape = line.shape;
 		this->IdLatLonListsToContour(shape, transform, line1);
-		Polygon lineAsPolygon(line1, innersEmpty);
-		lineAsPolygons.push_back(lineAsPolygon);
 
+		Contours tmp;
+		tmp.push_back(line1);
 		for(size_t j=0; j < shapesOutput.size(); j++)
-			shapesOutput[j]->OutLine(styleDef, lineAsPolygons, line.tags);
+			shapesOutput[j]->OutLine(styleDef, tmp, line.tags);
 
 	}
 
@@ -232,7 +228,7 @@ public:
 	virtual ~FeaturesToDrawCmds() {};
 	
 	void OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons, const TagMap &tags);
-	void OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons, const TagMap &tags);
+	void OutLine(StyleDef &styleDef, const Contours &lineAsPolygons, const TagMap &tags);
 	void OutPoi(StyleDef &styleDef, double px, double py, const TagMap &tags) {};
 	void DrawToTree(StyleDef &styleDef, const std::vector<Polygon> &polygons);
 };
@@ -243,9 +239,14 @@ void FeaturesToDrawCmds::OutArea(StyleDef &styleDef, const std::vector<Polygon> 
 	this->DrawToTree(styleDef, polygons);
 }
 
-void FeaturesToDrawCmds::OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons, const TagMap &tags)
+void FeaturesToDrawCmds::OutLine(StyleDef &styleDef, const Contours &lines, const TagMap &tags)
 {
-	//Integrate shape into draw tree
+	//Integrate shape into draw tree, pretend this are polygons
+	std::vector<Polygon> lineAsPolygons;
+	Contours emptyInnerContours;
+	for(size_t i =0; i < lines.size(); i++)
+		lineAsPolygons.push_back(Polygon(lines[i], emptyInnerContours));
+
 	this->DrawToTree(styleDef, lineAsPolygons);
 }
 
@@ -335,7 +336,7 @@ public:
 	virtual ~FeaturesToLabelEngine() {};
 	
 	void OutArea(StyleDef &styleDef, const std::vector<Polygon> &polygons, const TagMap &tags);
-	void OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons, const TagMap &tags);
+	void OutLine(StyleDef &styleDef, const Contours &lineAsPolygons, const TagMap &tags);
 	void OutPoi(StyleDef &styleDef, double px, double py, const TagMap &tags);
 };
 
@@ -375,7 +376,7 @@ void FeaturesToLabelEngine::OutArea(StyleDef &styleDef, const std::vector<Polygo
 	}
 }
 
-void FeaturesToLabelEngine::OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons, const TagMap &tags)
+void FeaturesToLabelEngine::OutLine(StyleDef &styleDef, const Contours &lines, const TagMap &tags)
 {
 	//Transfer line labels to label engine	
 	for(size_t j=0; j< styleDef.size(); j++)
@@ -392,7 +393,20 @@ void FeaturesToLabelEngine::OutLine(StyleDef &styleDef, const std::vector<Polygo
 		else
 			continue; //Don't draw if name not specified
 		
-		//poiLabels.push_back(PoiLabel(px, py, textName, tags, styleAttributes));
+		//Get shape of line in draw space		
+		for(size_t i=0; i< lines.size(); i++)
+		{
+			Contour shape;
+			double px = 0.0, py = 0.0;
+			const Contour &line = lines[i];
+			for(size_t k=0;k<line.size();k++)
+			{
+				px = line[k].first;
+				py = line[k].second;
+				shape.push_back(Point(px, py));
+			}			
+			poiLabels.push_back(PoiLabel(shape, textName, tags, styleAttributes));
+		}
 	}
 }
 
