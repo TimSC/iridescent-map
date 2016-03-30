@@ -207,12 +207,11 @@ void LabelBounds::Translate(double tx, double ty)
 
 PoiLabel::PoiLabel()
 {
-	sx = 0.0;
-	sy = 0.0;
+
 }
 
-PoiLabel::PoiLabel(double sx, double sy, const std::string &textName, const TagMap &tags, const StyleAttributes &styleAttributes):
-	sx(sx), sy(sy), textName(textName), tags(tags), styleAttributes(styleAttributes)
+PoiLabel::PoiLabel(const Contour &shape, const std::string &textName, const TagMap &tags, const StyleAttributes &styleAttributes):
+	shape(shape), textName(textName), tags(tags), styleAttributes(styleAttributes)
 {
 	
 }
@@ -229,8 +228,7 @@ PoiLabel::~PoiLabel()
 
 PoiLabel& PoiLabel::operator=(const PoiLabel &arg)
 {
-	sx = arg.sx;
-	sy = arg.sy;
+	shape = arg.shape;
 	textName = arg.textName;
 	tags = arg.tags;
 	styleAttributes = arg.styleAttributes;
@@ -299,8 +297,10 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 		foregroundProp.fontSize = textSize;
 		foregroundProp.halign = 0.5;
 
-		double lx = label.sx;
-		double ly = label.sy;
+		if(label.shape.size() == 0) continue;
+
+		double lx = label.shape[0].first;
+		double ly = label.shape[0].second;
 		TextLabel outLabel(outString, lx, ly);
 		TwistedTriangles bounds;
 		if(this->output != NULL)

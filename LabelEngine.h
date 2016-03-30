@@ -23,6 +23,7 @@ public:
 	void Translate(double tx, double ty);
 };
 
+///A label/icon group with low level drawing API information, with bounding info.
 class LabelDef
 {
 public:
@@ -46,17 +47,17 @@ typedef std::map<int, std::vector<class LabelDef> > LabelsByImportance;
 void MergeLabelsByImportance(LabelsByImportance &mergeIntoThis, const LabelsByImportance &labelsToMerge);
 void TranslateLabelsByImportance(const LabelsByImportance &labelsIn, double tx, double ty, LabelsByImportance &labelsOut);
 
+///An object to label in draw space, as well as tags and map style definition.
 class PoiLabel
 {
 public:
-	double sx;
-	double sy;
+	Contour shape;
 	std::string textName;
 	TagMap tags;
 	StyleAttributes styleAttributes;
 
 	PoiLabel();
-	PoiLabel(double sx, double sy, const std::string &textName, const TagMap &tags, const StyleAttributes &styleAttributes);
+	PoiLabel(const Contour &shape, const std::string &textName, const TagMap &tags, const StyleAttributes &styleAttributes);
 	PoiLabel(const class PoiLabel &a);
 	virtual ~PoiLabel();
 	PoiLabel& operator=(const PoiLabel &arg);

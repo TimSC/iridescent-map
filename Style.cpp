@@ -72,11 +72,17 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		
 		if(!knownType)
 		{
+			style["text-name"] = "[name]";
+			style["text-size"] = "9";
+			style["text-importance"] = "1";
 			style["line-color"] = "#000000";
 			style["line-width"] = "3";
 			layerDef.push_back(1);
 			layerDef.push_back(0);
 
+			style["text-name"] = "[name]";
+			style["text-size"] = "9";
+			style["text-importance"] = "1";
 			style2["line-color"] = "#aaaaaa";
 			style2["line-width"] = "2";
 			layerDef2.push_back(1);

@@ -368,14 +368,32 @@ void FeaturesToLabelEngine::OutArea(StyleDef &styleDef, const std::vector<Polygo
 			}
 			px /= outer.size();
 			py /= outer.size();
-			poiLabels.push_back(PoiLabel(px, py, textName, tags, styleAttributes));
+			Contour shape;
+			shape.push_back(Point(px, py));
+			poiLabels.push_back(PoiLabel(shape, textName, tags, styleAttributes));
 		}
 	}
 }
 
 void FeaturesToLabelEngine::OutLine(StyleDef &styleDef, const std::vector<Polygon> &lineAsPolygons, const TagMap &tags)
 {
+	//Transfer line labels to label engine	
+	for(size_t j=0; j< styleDef.size(); j++)
+	{
+		StyleAndLayerDef &styleAndLayerDef = styleDef[j];
+		LayerDef &layerDef = styleAndLayerDef.first;
+		StyleAttributes &styleAttributes = styleAndLayerDef.second;
 
+		string textName = "";
+		TagMap::const_iterator attrIt = styleAttributes.find("text-name");
+		if(attrIt != styleAttributes.end()) {
+			textName = attrIt->second;
+		}
+		else
+			continue; //Don't draw if name not specified
+		
+		//poiLabels.push_back(PoiLabel(px, py, textName, tags, styleAttributes));
+	}
 }
 
 void FeaturesToLabelEngine::OutPoi(StyleDef &styleDef, double px, double py, const TagMap &tags)
@@ -395,7 +413,9 @@ void FeaturesToLabelEngine::OutPoi(StyleDef &styleDef, double px, double py, con
 		else
 			continue; //Don't draw if name not specified
 		
-		poiLabels.push_back(PoiLabel(px, py, textName, tags, styleAttributes));
+		Contour shape;
+		shape.push_back(Point(px, py));
+		poiLabels.push_back(PoiLabel(shape, textName, tags, styleAttributes));
 	}
 }
 
