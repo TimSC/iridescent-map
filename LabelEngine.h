@@ -31,11 +31,16 @@ public:
 	class TextProperties foregroundProp;
 	class TextProperties backgroundProp;
 	std::vector<class TextLabel> labels;
+	std::vector<class TwistedTextLabel> twistedLabels;
 
 	LabelDef(const class LabelBounds &labelBounds,
 		const class TextProperties &foregroundProp,
 		const class TextProperties &backgroundProp,
 		const std::vector<class TextLabel> &labels);
+	LabelDef(const class LabelBounds &labelBounds,
+		const class TextProperties &foregroundProp,
+		const class TextProperties &backgroundProp,
+		const std::vector<class TwistedTextLabel> &twistedLabels);
 	LabelDef(const class LabelDef &a);
 	virtual ~LabelDef();
 	LabelDef& operator=(const LabelDef &arg);

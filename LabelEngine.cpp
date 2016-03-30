@@ -16,6 +16,17 @@ LabelDef::LabelDef(const class LabelBounds &labelBounds,
 
 }
 
+LabelDef::LabelDef(const class LabelBounds &labelBounds,
+		const class TextProperties &foregroundProp,
+		const class TextProperties &backgroundProp,
+		const std::vector<class TwistedTextLabel> &twistedLabels) : labelBounds(labelBounds),
+		foregroundProp(foregroundProp),
+		backgroundProp(backgroundProp),
+		twistedLabels(twistedLabels)
+{
+
+}
+
 LabelDef::LabelDef(const class LabelDef &a) : labelBounds(a.labelBounds)
 {
 	*this = a;
@@ -32,6 +43,7 @@ LabelDef& LabelDef::operator=(const LabelDef &arg)
 	foregroundProp = arg.foregroundProp;
 	backgroundProp = arg.backgroundProp;
 	labels = arg.labels;
+	twistedLabels = arg.twistedLabels;
 }
 
 void LabelDef::Translate(double tx, double ty)
@@ -296,28 +308,14 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 		paramIt = label.styleAttributes.find("text-placement");
 		if(paramIt != label.styleAttributes.end())
 			placement = paramIt->second;
+
+		//A shape is required for any drawing to happen
+		if(label.shape.size() == 0) continue;
 		
-		//Get bounds
+		//Define draw styles
 		class TextProperties foregroundProp(fillR, fillG, fillB);
 		foregroundProp.fontSize = textSize;
 		foregroundProp.halign = 0.5;
-
-		if(label.shape.size() == 0) continue;
-
-		double lx = label.shape[0].first;
-		double ly = label.shape[0].second;
-		TextLabel outLabel(outString, lx, ly);
-		TwistedTriangles bounds;
-		if(this->output != NULL)
-		{
-			this->output->GetTriangleBoundsText(outLabel, foregroundProp, 
-				bounds);
-		}
-	
-		std::vector<class TextLabel> textStrs;
-		textStrs.push_back(outLabel);
-
-		class LabelBounds labelBounds(bounds);
 
 		class TextProperties backgroundProp(haloR, haloG, haloB);
 		backgroundProp.fontSize = textSize;
@@ -327,11 +325,55 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 		backgroundProp.lineWidth=haloWidth;
 		backgroundProp.halign = 0.5;
 
-		//Add label definition to list
-		LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
-		if(it == organisedLabelsOut.end())
-			organisedLabelsOut[importance] = vector<class LabelDef>();
-		organisedLabelsOut[importance].push_back(LabelDef(labelBounds, foregroundProp, backgroundProp, textStrs));
+		if(placement == "point")
+		{
+			//Get bounds
+			double lx = label.shape[0].first;
+			double ly = label.shape[0].second;
+			TextLabel outLabel(outString, lx, ly);
+			TwistedTriangles bounds;
+			if(this->output != NULL)
+			{
+				this->output->GetTriangleBoundsText(outLabel, foregroundProp, 
+					bounds);
+			}
+	
+			std::vector<class TextLabel> textStrs;
+			textStrs.push_back(outLabel);
+
+			class LabelBounds labelBounds(bounds);
+
+			//Add label definition to list
+			LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
+			if(it == organisedLabelsOut.end())
+				organisedLabelsOut[importance] = vector<class LabelDef>();
+			organisedLabelsOut[importance].push_back(LabelDef(labelBounds, foregroundProp, backgroundProp, textStrs));
+		}
+		
+		if(placement == "line")
+		{
+			//Get bounds
+			std::vector<TwistedCurveCmd> path;
+			SmoothContour(label.shape, path);
+			TwistedTextLabel outLabel(outString, path);
+			TwistedTriangles bounds;
+			if(this->output != NULL)
+			{
+				this->output->GetTriangleBoundsTwistedText(outLabel, foregroundProp, 
+					bounds);
+			}
+	
+			std::vector<class TwistedTextLabel> textStrs;
+			textStrs.push_back(outLabel);
+
+			class LabelBounds labelBounds(bounds);
+
+			//Add label definition to list
+			LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
+			if(it == organisedLabelsOut.end())
+				organisedLabelsOut[importance] = vector<class LabelDef>();
+			organisedLabelsOut[importance].push_back(LabelDef(labelBounds, foregroundProp, backgroundProp, textStrs));
+		}
 	}
 }
 
