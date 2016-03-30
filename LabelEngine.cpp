@@ -292,6 +292,11 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 		if(paramIt != label.styleAttributes.end())
 			haloWidth = atof(paramIt->second.c_str());
 
+		std::string placement = "point";
+		paramIt = label.styleAttributes.find("text-placement");
+		if(paramIt != label.styleAttributes.end())
+			placement = paramIt->second;
+		
 		//Get bounds
 		class TextProperties foregroundProp(fillR, fillG, fillB);
 		foregroundProp.fontSize = textSize;
