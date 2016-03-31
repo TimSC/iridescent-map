@@ -438,13 +438,28 @@ void LabelEngine::WriteDrawCommands(const LabelsByImportance &organisedLabels)
 		{
 			const class LabelDef &labelDef = lbs[j];
 
-			//Ghost background
-			if(this->output != NULL)
-				this->output->AddDrawTextCmd(labelDef.labels, labelDef.backgroundProp);
+			if(labelDef.labels.size() > 0)
+			{
+				//Ghost background
+				if(this->output != NULL)
+					this->output->AddDrawTextCmd(labelDef.labels, labelDef.backgroundProp);
 
-			//Foreground text
-			if(this->output != NULL)
-				this->output->AddDrawTextCmd(labelDef.labels, labelDef.foregroundProp);
+				//Foreground text
+				if(this->output != NULL)
+					this->output->AddDrawTextCmd(labelDef.labels, labelDef.foregroundProp);
+			}
+
+			if(labelDef.twistedLabels.size() > 0)
+			{
+				//Ghost background
+				if(this->output != NULL)
+					this->output->AddDrawTwistedTextCmd(labelDef.twistedLabels, labelDef.backgroundProp);
+
+				//Foreground text
+				if(this->output != NULL)
+					this->output->AddDrawTwistedTextCmd(labelDef.twistedLabels, labelDef.foregroundProp);
+			}
+
 		}
 	}
 }
