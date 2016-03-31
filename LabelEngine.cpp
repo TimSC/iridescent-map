@@ -52,8 +52,12 @@ void LabelDef::Translate(double tx, double ty)
 	for(size_t i=0; i<labels.size();i++)
 	{
 		class TextLabel &tl = labels[i];
-		tl.x += tx;
-		tl.y += ty;
+		tl.Translate(tx, ty);
+	}
+	for(size_t i=0; i<twistedLabels.size();i++)
+	{
+		class TwistedTextLabel &tl = twistedLabels[i];
+		tl.Translate(tx, ty);
 	}
 }
 
