@@ -315,22 +315,22 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 
 		//A shape is required for any drawing to happen
 		if(label.shape.size() == 0) continue;
-		
-		//Define draw styles
-		class TextProperties foregroundProp(fillR, fillG, fillB);
-		foregroundProp.fontSize = textSize;
-		foregroundProp.halign = 0.5;
-
-		class TextProperties backgroundProp(haloR, haloG, haloB);
-		backgroundProp.fontSize = textSize;
-		backgroundProp.la = haloA;
-		backgroundProp.outline = true;
-		backgroundProp.fill = false;
-		backgroundProp.lineWidth=haloWidth;
-		backgroundProp.halign = 0.5;
 
 		if(placement == "point")
 		{
+			//Define draw styles
+			class TextProperties foregroundProp(fillR, fillG, fillB);
+			foregroundProp.fontSize = textSize;
+			foregroundProp.halign = 0.5;
+
+			class TextProperties backgroundProp(haloR, haloG, haloB);
+			backgroundProp.fontSize = textSize;
+			backgroundProp.la = haloA;
+			backgroundProp.outline = true;
+			backgroundProp.fill = false;
+			backgroundProp.lineWidth=haloWidth;
+			backgroundProp.halign = 0.5;
+
 			//Get bounds
 			double lx = label.shape[0].first;
 			double ly = label.shape[0].second;
@@ -356,6 +356,17 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 		
 		if(placement == "line")
 		{
+			//Define draw styles
+			class TextProperties foregroundProp(fillR, fillG, fillB);
+			foregroundProp.fontSize = textSize;
+
+			class TextProperties backgroundProp(haloR, haloG, haloB);
+			backgroundProp.fontSize = textSize;
+			backgroundProp.la = haloA;
+			backgroundProp.outline = true;
+			backgroundProp.fill = false;
+			backgroundProp.lineWidth=haloWidth;
+
 			//Get bounds
 			std::vector<TwistedCurveCmd> path;
 			SmoothContour(label.shape, path);
