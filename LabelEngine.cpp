@@ -359,6 +359,7 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 			//Define draw styles
 			class TextProperties foregroundProp(fillR, fillG, fillB);
 			foregroundProp.fontSize = textSize;
+			foregroundProp.valign = 0.7;
 
 			class TextProperties backgroundProp(haloR, haloG, haloB);
 			backgroundProp.fontSize = textSize;
@@ -366,17 +367,23 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 			backgroundProp.outline = true;
 			backgroundProp.fill = false;
 			backgroundProp.lineWidth=haloWidth;
+			backgroundProp.valign = 0.7;
 
 			//Get bounds
 			std::vector<TwistedCurveCmd> path;
 			SmoothContour(label.shape, path);
 			TwistedTextLabel outLabel(outString, path);
 			TwistedTriangles bounds;
+			double pathLen = -1.0, textLen = -1.0;
 			if(this->output != NULL)
 			{
 				this->output->GetTriangleBoundsTwistedText(outLabel, foregroundProp, 
-					bounds);
+					bounds, pathLen, textLen);
 			}
+
+			//Don't draw if string is too long for path
+			if(pathLen >= 0.0 && textLen >= 0.0 && textLen > pathLen)
+				continue;
 	
 			std::vector<class TwistedTextLabel> textStrs;
 			textStrs.push_back(outLabel);
