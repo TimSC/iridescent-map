@@ -326,6 +326,10 @@ void FeaturesToDrawCmds::DrawToTree(StyleDef &styleDef, const std::vector<Polygo
 
 // **********************************************
 
+///This is responsible for converting shapes to screen coordinates, 
+///and making text appear the right way up.
+///The result is passed to LabelEngine.
+///It also filters the objects so that only named objects are passed on.
 class FeaturesToLabelEngine : public IFeatureConverterResult
 {
 public:
