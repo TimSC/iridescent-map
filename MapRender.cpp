@@ -1,3 +1,4 @@
+///\file
 #include "MapRender.h"
 #include <iostream>
 #include <stdlib.h>
@@ -76,6 +77,7 @@ public:
 
 // ***********************************************
 
+///FeatureConverter takes FeatureStore data, finds an appropriate Style to the data, converts coordinates to screen space and produces a stream of objects that are returned to a visitor object derived from IFeatureConverterResult.
 class FeatureConverter
 {
 public:
@@ -219,6 +221,7 @@ void FeatureConverter::ToDrawSpace(double nx, double ny, double &px, double &py)
 
 // **************************************************************
 
+///Takes a stream of objects with associated styles from FeatureConverter and converts them into draw commands that reside in a DrawTreeNode based drawTree.
 class FeaturesToDrawCmds : public IFeatureConverterResult
 {
 public:
@@ -326,10 +329,10 @@ void FeaturesToDrawCmds::DrawToTree(StyleDef &styleDef, const std::vector<Polygo
 
 // **********************************************
 
-///This is responsible for converting shapes to screen coordinates, 
-///and making text appear the right way up.
-///The result is passed to LabelEngine.
-///It also filters the objects so that only named objects are passed on.
+/*\brief Takes a stream of objects with associated styles from FeatureConverter and stores where labels should be drawn (output to member poiLabels).
+It also filters the objects so that only named objects are passed on.
+The result is passed to LabelEngine.
+*/
 class FeaturesToLabelEngine : public IFeatureConverterResult
 {
 public:
@@ -437,8 +440,6 @@ void FeaturesToLabelEngine::OutPoi(StyleDef &styleDef, double px, double py, con
 	}
 }
 
-
-
 // **********************************************
 
 MapRender::MapRender(class IDrawLib *output) : output(output)
@@ -487,12 +488,14 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore,
 	}
 }
 
-void MapRender::RenderLabels(const std::vector<LabelsByImportance> &labelList,
-	const std::vector<std::pair<double, double> > &labelOffsets)
+void MapRender::RenderLabels(const RenderLabelList &labelList,
+	const RenderLabelListOffsets &labelOffsets)
 {
 	if(labelList.size() != labelOffsets.size())
 		throw std::runtime_error("List lengths should match");
 	class LabelEngine labelEngine(this->output);
+
+	//Combine labels into a unified list
 	LabelsByImportance combinedLabels;
 	for(size_t i = 0; i< labelList.size(); i++)
 	{
@@ -502,9 +505,11 @@ void MapRender::RenderLabels(const std::vector<LabelsByImportance> &labelList,
 		MergeLabelsByImportance(combinedLabels, translatedLabels);
 	}
 
+	///Remove overlapping labels
 	LabelsByImportance deoverlappedLabels;
 	labelEngine.RemoveOverlapping(combinedLabels, deoverlappedLabels);
 
+	///Do label drawing
 	labelEngine.WriteDrawCommands(deoverlappedLabels);
 	this->output->Draw();
 }

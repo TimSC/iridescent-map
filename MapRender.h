@@ -46,7 +46,7 @@ public:
 
 	///This renders labels on to a drawing surface for a tile based on its own labels and the labels of surrounding tiles.
 	void RenderLabels(const RenderLabelList &labelList,
-		const  &labelOffsets);
+		const RenderLabelListOffsets &labelOffsets);
 };
 
 #endif //_MAP_RENDER_H

@@ -12,12 +12,6 @@ using namespace std;
 
 /** \mainpage
 
-Renderer API
-
-                          (CppSharp)  native (Python)
-                              |---------|-------|    
-                                        |             
-
 The ReadInput() function loads a data source into a POI, line, area representation, which is a higher level preprocessed representation than the usual node, way, relation representation.
 
 - DecodeGzip decodes the binary file into a o5m stream
@@ -32,31 +26,44 @@ MapRender takes FeatureStore data, a transform object derived from ITransform (i
 
 The labels from surrounding tiles are then combined into a RenderLabelList and passed to MapRender::RenderLabels() for drawing to the IDrawLib drawing surface. This is responsible for merging equivalent labels, checking the label actually fits in the allowed space, ensuring it is the right way up, etc.
 
-\section oldplan Old plan for design
-
-This is still vaguely correct.
+\section oldplan Overall design concept
 
                               Data source    Source definition
                                      |              |
                              Input selector --------|
                                      |
-                              Tag preprocessor -- Preprocessor def
-                                          |
-                                     Regroup objects -- Style def
-                                          |
-	                                 Layer draw manager
-                                       |          |
-                                       |          |
-    Style parser --Style def -- Way processor      Area/POI processor---- Style def
-                                       |           |
-									Map transform--|
-                                       |           |
-                                       |-----------|----Icon/Label engine
-                                       |           |
-    Render engine                     Renderer ----|
+                                TagPreprocessor
+                                        |
+                                     Regrouper
+                                        |
+	                                  MapRender
+                                        |
+                                  IDrawLib based renderer
                                         |
                           |-------------|-----------|----------|--------|
     Backends            Pango      (OpenGL ES)    Cairo     (WebGL)   (SVG)
+
+\subsection api Render API
+
+                          (CppSharp)  native (Python)
+                              |---------|-------|    
+                                        |             
+
+\subsection maprender MapRender
+
+                                     FeatureConverter ---- Style
+                                       |          |    |
+                                       |          |    --- ITransform
+                                       |          |
+                          FeaturesToDrawCmds   FeaturesToLabelEngine
+                                       |          |
+									drawTree   FeaturesToLabelEngine::poiLabels
+                                       |          |
+             DrawTreeNode::WriteDrawCommands   LabelEngine
+                                       |          |
+                                       ▼          ▼
+                                          output
+
 
 See also: http://wiki.osgeo.org/wiki/OSGeo_Cartographic_Engine_Discussion
 
