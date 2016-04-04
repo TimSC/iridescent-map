@@ -482,4 +482,3 @@ void LabelEngine::WriteDrawCommands(const LabelsByImportance &organisedLabels)
 	}
 }
 
-

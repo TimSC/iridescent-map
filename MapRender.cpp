@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdexcept>
+#include <algorithm>
 #include <stdio.h>
 #include "LabelEngine.h"
 using namespace std;
@@ -399,19 +400,24 @@ void FeaturesToLabelEngine::OutLine(StyleDef &styleDef, const Contours &lines, c
 		}
 		else
 			continue; //Don't draw if name not specified
-		
-		//Get shape of line in draw space		
+				
 		for(size_t i=0; i< lines.size(); i++)
 		{
-			Contour shape;
-			double px = 0.0, py = 0.0;
 			const Contour &line = lines[i];
-			for(size_t k=0;k<line.size();k++)
+
+			//Check label paths are the correct way up (left to right generally)
+			Contour shape = line;
+			if(line.size() >= 2)
 			{
-				px = line[k].first;
-				py = line[k].second;
-				shape.push_back(Point(px, py));
-			}			
+				const Point &start = line[0];
+				const Point &end = line[line.size()-1];
+				if(start.first > end.first) //First value is x coordinate
+				{
+					//This needs to be reversed
+					std::reverse(shape.begin(), shape.end());
+				}
+			}
+
 			poiLabels.push_back(PoiLabel(shape, textName, tags, styleAttributes));
 		}
 	}
@@ -484,6 +490,12 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore,
 		organisedLabelsOut.clear();
 		LabelsByImportance organisedLabelsTmp;
 		labelEngine.LabelPoisToStyledLabel(featuresToLabelEngine.poiLabels, organisedLabelsTmp);
+
+		//Merge equivalent labels?
+		//Only label paths beginning on this tile are considered for merging to prevent differences in merging between tiles
+		//TODO
+
+		//Remove overlapping labels
 		labelEngine.RemoveOverlapping(organisedLabelsTmp, organisedLabelsOut);
 	}
 }
