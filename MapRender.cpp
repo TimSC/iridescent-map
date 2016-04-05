@@ -489,11 +489,16 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore,
 	{
 		organisedLabelsOut.clear();
 		LabelsByImportance organisedLabelsTmp;
-		labelEngine.LabelPoisToStyledLabel(featuresToLabelEngine.poiLabels, organisedLabelsTmp);
 
 		//Merge equivalent labels?
 		//Only label paths beginning on this tile are considered for merging to prevent differences in merging between tiles
 		//TODO
+
+		//Smooth label paths
+		SmoothLabelPaths(featuresToLabelEngine.poiLabels, 5.0);
+
+		//Convert label defs to draw commands
+		labelEngine.LabelPoisToStyledLabel(featuresToLabelEngine.poiLabels, organisedLabelsTmp);
 
 		//Remove overlapping labels
 		labelEngine.RemoveOverlapping(organisedLabelsTmp, organisedLabelsOut);

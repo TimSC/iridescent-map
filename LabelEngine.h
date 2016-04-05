@@ -51,6 +51,7 @@ public:
 typedef std::map<int, std::vector<class LabelDef> > LabelsByImportance;
 void MergeLabelsByImportance(LabelsByImportance &mergeIntoThis, const LabelsByImportance &labelsToMerge);
 void TranslateLabelsByImportance(const LabelsByImportance &labelsIn, double tx, double ty, LabelsByImportance &labelsOut);
+void SmoothLabelPaths(std::vector<class PoiLabel> &poiLabels, double tolerance);
 
 ///An object to label in draw space, as well as tags and map style definition.
 class PoiLabel

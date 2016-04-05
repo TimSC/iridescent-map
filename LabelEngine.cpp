@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdexcept>
 #include "TriTri2d.h"
+#include "drawlib/RdpSimplify.h"
 using namespace std;
 
 LabelDef::LabelDef(const class LabelBounds &labelBounds,
@@ -371,7 +372,7 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 
 			//Get bounds
 			std::vector<TwistedCurveCmd> path;
-			SmoothContour(label.shape, path);
+			FixBezierToPoints(label.shape, path);
 			TwistedTextLabel outLabel(outString, path);
 			TwistedTriangles bounds;
 			double pathLen = -1.0, textLen = -1.0;
@@ -479,6 +480,22 @@ void LabelEngine::WriteDrawCommands(const LabelsByImportance &organisedLabels)
 			}
 
 		}
+	}
+}
+
+// **********************************************
+
+void SmoothLabelPaths(std::vector<class PoiLabel> &poiLabels, double tolerance)
+{
+	for(size_t i=0;i < poiLabels.size(); i++)
+	{
+		class PoiLabel &label = poiLabels[i];
+		Contour &shape = label.shape;
+		if(shape.size() <= 2) continue; //Can't be simplified
+		
+		Contour simpified;
+		RamerDouglasPeucker(shape, 5.0, simpified);
+		label.shape = simpified;
 	}
 }
 

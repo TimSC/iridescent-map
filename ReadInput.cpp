@@ -147,6 +147,7 @@ int main()
 	ReadInput(12, 2035, 1374, featureStore);
 
 	class SlippyTilesTransform slippyTilesTransform(12, 2035, 1374);
+	//class SlippyTilesTransform slippyTilesTransform(14, 8143, 5498);
 
 	class DrawLibCairoPango drawlib(surface);	
 	class MapRender mapRender(&drawlib);
