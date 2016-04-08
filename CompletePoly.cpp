@@ -2,6 +2,7 @@
 #include <vector>
 #include <iostream>
 #include <cmath>
+#include <stdexcept>
 #include "drawlib/LineLineIntersect.h"
 using namespace std;
 typedef std::pair<double, double> Point;
@@ -29,7 +30,8 @@ public:
 	size_t edgeIndex;
 };
 
-void DetectLineBboxEntryExit(const Point &pt1, const Point &pt2, const std::vector<double> &bbox)
+void DetectLineBboxEntryExit(const Point &pt1, const Point &pt2, const std::vector<double> &bbox,
+	std::vector<class Crossing> &crossingsSortedOut)
 {
 	//Crossings found
 	std::vector<class Crossing> crossings;
@@ -84,26 +86,44 @@ void DetectLineBboxEntryExit(const Point &pt1, const Point &pt2, const std::vect
 		}
 	}
 
-	//Find nearest collision point from line start (pt1)
-	bool minSet = false;
-	double minDistSq = -1.0;
-	size_t minIndex = 0;
+	//Prepare to sort by distance
+	vector<bool> crossingsMask;
+	crossingsMask.resize(crossings.size());
+	for(size_t i=0; i < crossings.size(); i++)
+		crossingsMask[i] = true;
+	
+	vector<double> crossingDistSq;
+	crossingDistSq.resize(crossings.size());
 	for(size_t i=0; i < crossings.size(); i++)
 	{
 		class Crossing &crossing = crossings[i];
 		double distSq = pow(crossing.ix - pt1.first, 2.0) + pow(crossing.iy - pt1.second, 2.0);
-		if(!minSet || distSq < minDistSq)
-		{
-			minDistSq = distSq;
-			minSet = true;
-			minIndex = i;
-		}
+		crossingDistSq[i] = distSq;
 	}
 
-	if(minSet)
+	//(Pretty much) selection sort by distance of collision point from line start (pt1)
+	crossingsSortedOut.resize(0);
+	crossingsSortedOut.reserve(crossings.size());
+
+	while(crossingsSortedOut.size() < crossings.size())
 	{
-		class Crossing &crossing = crossings[minIndex];
-		cout << "crossing " << crossing.edgeIndex << "," << crossing.ix << "," << crossing.iy << endl;
+		double minDistSq = -1.0;
+		bool minSet = false;
+		size_t minIndex = 0;
+		for(size_t i=0; i<crossings.size(); i++)
+		{
+			if(crossingsMask[i] == false) continue;
+			if(!minSet || crossingDistSq[i] < minDistSq)
+			{
+				minDistSq = crossingDistSq[i];
+				minIndex = i;
+				minSet = true;
+			}
+		}
+		if(!minSet)
+			throw runtime_error("Internal error during sort");
+		crossingsSortedOut.push_back(crossings[minIndex]);
+		crossingsMask[minIndex] = false;
 	}
 }
 
@@ -118,7 +138,15 @@ void AnalyseContour(const Contour &contour, const std::vector<double> &bbox)
 	{
 		const Point *pt = &contour[i];
 		cout << prevPt->first<<","<<prevPt->second << "\t" << pt->first<<","<<pt->second << endl;
-		DetectLineBboxEntryExit(*prevPt, *pt, bbox);
+
+		std::vector<class Crossing> crossingsSorted;
+		DetectLineBboxEntryExit(*prevPt, *pt, bbox, crossingsSorted);
+
+		for(size_t i=0; i<crossingsSorted.size(); i++)
+		{
+			class Crossing &crossing = crossingsSorted[i];
+			cout << "crossing " << crossing.edgeIndex << "," << crossing.ix << "," << crossing.iy << endl;
+		}
 
 		prevPt = pt;
 	}
@@ -143,5 +171,11 @@ int main()
 	line1.push_back(Point(0.5, 1.1));
 
 	AnalyseContour(line1, bbox);
+
+	Contour line2;
+	line2.push_back(Point(-0.1, 0.5));
+	line2.push_back(Point(0.5, 1.1));
+
+	AnalyseContour(line2, bbox);
 }
 
