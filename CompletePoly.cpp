@@ -28,11 +28,15 @@ class Crossing
 public:
 	double ix, iy;
 	size_t edgeIndex;
+	bool startInside;
+	bool endInside;
 };
 
 void DetectLineBboxEntryExit(const Point &pt1, const Point &pt2, const std::vector<double> &bbox,
 	std::vector<class Crossing> &crossingsSortedOut)
 {
+	//bbox defined as left,bottom,right,top
+
 	//Crossings found
 	std::vector<class Crossing> crossings;
 
@@ -56,6 +60,16 @@ void DetectLineBboxEntryExit(const Point &pt1, const Point &pt2, const std::vect
 				crossing.ix = ix;
 				crossing.iy = iy;
 				crossing.edgeIndex = edgeIndex;
+				if(edgeIndex == 0)
+				{
+					crossing.startInside = !pt1LeftOfEdge;
+					crossing.endInside = !pt2LeftOfEdge;
+				}
+				else
+				{
+					crossing.startInside = pt1LeftOfEdge;
+					crossing.endInside = pt2LeftOfEdge;
+				}
 				crossings.push_back(crossing);
 			}
 		}
@@ -81,6 +95,16 @@ void DetectLineBboxEntryExit(const Point &pt1, const Point &pt2, const std::vect
 				crossing.ix = ix;
 				crossing.iy = iy;
 				crossing.edgeIndex = edgeIndex;
+				if(edgeIndex == 1)
+				{
+					crossing.startInside = !pt1BelowEdge;
+					crossing.endInside = !pt2BelowEdge;
+				}
+				else
+				{
+					crossing.startInside = pt1BelowEdge;
+					crossing.endInside = pt2BelowEdge;
+				}
 				crossings.push_back(crossing);
 			}
 		}
@@ -127,31 +151,101 @@ void DetectLineBboxEntryExit(const Point &pt1, const Point &pt2, const std::vect
 	}
 }
 
-void AnalyseContour(const Contour &contour, const std::vector<double> &bbox)
+class PointInfo
+{
+public:
+	double x, y;
+	int edgeIndex; //-1 for no edge contact
+
+	PointInfo(double x, double y, int edgeIndex)
+	{
+		this->x = x;
+		this->y = y;
+		this->edgeIndex = edgeIndex;
+	}
+};
+
+void AnalyseContour(const Contour &contour, const std::vector<double> &bbox, std::vector<std::vector<class PointInfo> > &pathsWithinBboxOut)
 {
 	unsigned int numInside = 0;
 	unsigned int numOutside = 0;
 	if(contour.size() < 2) return;
 
 	const Point *prevPt = &contour[0];
+	bool currentlyInsideBbox = IsPointInBbox(*prevPt, bbox);
+	pathsWithinBboxOut.clear();
+	std::vector<class PointInfo> pathWithinBbox;
+	if(currentlyInsideBbox)
+		pathWithinBbox.push_back(PointInfo(prevPt->first, prevPt->second, -1));
+	
 	for(size_t i=1; i < contour.size(); i++)
 	{
 		const Point *pt = &contour[i];
-		cout << prevPt->first<<","<<prevPt->second << "\t" << pt->first<<","<<pt->second << endl;
 
 		std::vector<class Crossing> crossingsSorted;
 		DetectLineBboxEntryExit(*prevPt, *pt, bbox, crossingsSorted);
 
-		for(size_t i=0; i<crossingsSorted.size(); i++)
+		if(crossingsSorted.size() == 0)
 		{
-			class Crossing &crossing = crossingsSorted[i];
-			cout << "crossing " << crossing.edgeIndex << "," << crossing.ix << "," << crossing.iy << endl;
+			//No crossing
+			if(currentlyInsideBbox)
+				pathWithinBbox.push_back(PointInfo(pt->first, pt->second, -1));
+		}
+
+		if(crossingsSorted.size() == 1)
+		{
+			//Single crossing
+			currentlyInsideBbox = !currentlyInsideBbox;
+			if(!currentlyInsideBbox)
+			{
+				//Path within bbox completed
+				pathWithinBbox.push_back(PointInfo(crossingsSorted[0].ix, crossingsSorted[0].iy, crossingsSorted[0].edgeIndex));
+				pathsWithinBboxOut.push_back(pathWithinBbox);
+				pathWithinBbox.clear();
+			}
+			else
+			{
+				//Starting new path in bbox
+				pathWithinBbox.push_back(PointInfo(crossingsSorted[0].ix, crossingsSorted[0].iy, crossingsSorted[0].edgeIndex));
+				pathWithinBbox.push_back(PointInfo(pt->first, pt->second, -1));
+			}
+
+		}
+
+		if(crossingsSorted.size() >= 2)
+		{
+			//Crossing in and out
+			//More than two crossings should not be possible
+			pathWithinBbox.push_back(PointInfo(crossingsSorted[0].ix, crossingsSorted[0].iy, crossingsSorted[0].edgeIndex));
+			pathWithinBbox.push_back(PointInfo(crossingsSorted[1].ix, crossingsSorted[1].iy, crossingsSorted[1].edgeIndex));
+			pathsWithinBboxOut.push_back(pathWithinBbox);
+			pathWithinBbox.clear();
+			currentlyInsideBbox = false;
+		}
+
+		if(currentlyInsideBbox && i == contour.size() - 1)
+		{
+			pathsWithinBboxOut.push_back(pathWithinBbox);
+			pathWithinBbox.clear();
 		}
 
 		prevPt = pt;
 	}
 
 	
+}
+
+void PrintPathsWithinBbox(const std::vector<std::vector<class PointInfo> > &pathsWithinBbox)
+{
+	for(size_t i=0;i<pathsWithinBbox.size();i++)
+	{
+		const std::vector<class PointInfo> &line = pathsWithinBbox[i];
+		for(size_t j=0; j< line.size(); j++)
+		{
+			const class PointInfo &pt = line[j];
+			cout << pt.x << "," << pt.y << "," << pt.edgeIndex << endl;
+		}
+	}
 }
 
 int main()
@@ -165,17 +259,32 @@ int main()
 	bbox.push_back(1.0);
 	bbox.push_back(1.0);
 
+	cout << "line1" << endl;
 	Contour line1;
 	line1.push_back(Point(0.5, -0.1));
 	line1.push_back(Point(0.5, 0.4));
 	line1.push_back(Point(0.5, 1.1));
 
-	AnalyseContour(line1, bbox);
+	std::vector<std::vector<class PointInfo> > pathsWithinBbox;
+	AnalyseContour(line1, bbox, pathsWithinBbox);
+	PrintPathsWithinBbox(pathsWithinBbox);
 
+	cout << "line2" << endl;
 	Contour line2;
 	line2.push_back(Point(-0.1, 0.5));
 	line2.push_back(Point(0.5, 1.1));
 
-	AnalyseContour(line2, bbox);
+	AnalyseContour(line2, bbox, pathsWithinBbox);
+	PrintPathsWithinBbox(pathsWithinBbox);
+
+	cout << "line3" << endl;
+	Contour line3;
+	line3.push_back(Point(-0.1, 0.5));
+	line3.push_back(Point(0.1, 0.5));
+	line3.push_back(Point(0.9, 0.5));
+	line3.push_back(Point(1.1, 0.5));
+
+	AnalyseContour(line3, bbox, pathsWithinBbox);
+	PrintPathsWithinBbox(pathsWithinBbox);
 }
 
