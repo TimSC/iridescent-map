@@ -113,24 +113,16 @@ void AnalyseContour(const Contour &contour, const std::vector<double> &bbox)
 	unsigned int numOutside = 0;
 	if(contour.size() < 2) return;
 
-	const Point &firstPt = contour[0];
-	bool firstPtInBbox = IsPointInBbox(firstPt, bbox);
-	const Point &lastPt = contour[contour.size()-1];
-	bool lastPtInBbox = IsPointInBbox(lastPt, bbox);
-
-	if(!firstPtInBbox && !lastPtInBbox)
+	const Point *prevPt = &contour[0];
+	for(size_t i=1; i < contour.size(); i++)
 	{
-		//Contour starts and ends outside, so check if it passes through at any stage
-		const Point *prevPt = &contour[0];
-		for(size_t i=1; i < contour.size(); i++)
-		{
-			const Point *pt = &contour[i];
-			cout << prevPt->first<<","<<prevPt->second << "\t" << pt->first<<","<<pt->second << endl;
-			DetectLineBboxEntryExit(*prevPt, *pt, bbox);
+		const Point *pt = &contour[i];
+		cout << prevPt->first<<","<<prevPt->second << "\t" << pt->first<<","<<pt->second << endl;
+		DetectLineBboxEntryExit(*prevPt, *pt, bbox);
 
-			prevPt = pt;
-		}
+		prevPt = pt;
 	}
+
 	
 }
 
