@@ -50,7 +50,7 @@ void DetectLineBboxEntryExit(const Point &pt1, const Point &pt2, const std::vect
 				bbox[edgeIndex], bbox[1], //Line 2 start
 				bbox[edgeIndex], bbox[3], //Line 2 end
 				ix, iy);
-			if(ok && iy >= bbox[1] && iy < bbox[3])
+			if(ok && iy >= bbox[1] && iy <= bbox[3])
 			{
 				class Crossing crossing;
 				crossing.ix = ix;
@@ -75,7 +75,7 @@ void DetectLineBboxEntryExit(const Point &pt1, const Point &pt2, const std::vect
 				bbox[0], bbox[edgeIndex], //Line 2 start
 				bbox[2], bbox[edgeIndex], //Line 2 end
 				ix, iy);
-			if(ok && ix >= bbox[0] && ix < bbox[2])
+			if(ok && ix >= bbox[0] && ix <= bbox[2])
 			{
 				class Crossing crossing;
 				crossing.ix = ix;
