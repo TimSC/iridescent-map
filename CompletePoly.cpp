@@ -389,6 +389,70 @@ void TestContourAnalyse()
 	PrintPathsWithinBbox(pathsWithinBbox);
 }
 
+bool SearchForConnection(int edgeIndex, double cursor, EdgeMap &startOnEdgeMap, const vector<bool> &pathSentToOutput, int &foundPathIndexOut)
+{
+	foundPathIndexOut = -1;
+	int direction = 0;
+	if(edgeIndex >= 0 && edgeIndex <= 1)
+		direction = 1;
+	if(edgeIndex >= 2 && edgeIndex <= 3)
+		direction = -1;
+	//cout << cursor <<"," << direction << endl;	
+	
+	//Check first side
+	const map<double, int> &thisEdge = startOnEdgeMap[edgeIndex];
+
+	if(direction == 1)
+	{
+		for(map<double, int>::const_iterator it = thisEdge.begin(); it != thisEdge.end(); it++)
+		{
+			if(pathSentToOutput[it->second]) continue;
+			if(it->first < cursor) continue;
+			foundPathIndexOut = it->second;
+			return true;
+		}
+	}
+	else
+	{
+		for(map<double, int>::const_reverse_iterator it = thisEdge.rbegin(); it != thisEdge.rend(); it++)
+		{
+			if(pathSentToOutput[it->second]) continue;
+			if(it->first > cursor) continue;
+			foundPathIndexOut = it->second;
+			return true;
+		}
+	}
+
+	//Try the other edges, then 
+	for(int i=0; i<4; i++)
+	{
+		edgeIndex = (edgeIndex+1) % 4;
+		const map<double, int> &currentEdge = startOnEdgeMap[edgeIndex];
+		if(direction == 1)
+		{
+			for(map<double, int>::const_iterator it = currentEdge.begin(); it != currentEdge.end(); it++)
+			{
+				if(pathSentToOutput[it->second]) continue;
+				foundPathIndexOut = it->second;
+				return true;
+			}
+		}
+		else
+		{
+			for(map<double, int>::const_reverse_iterator it = currentEdge.rbegin(); it != currentEdge.rend(); it++)
+			{
+				if(pathSentToOutput[it->second]) continue;
+				foundPathIndexOut = it->second;
+				return true;
+			}
+		}
+	}
+
+	//This should not usually happen because the original path should have been returned
+	return false;
+}
+
+
 void AssignContoursToEdgeMap(const ContoursWithIds &contours, 
 	const std::vector<double> &bbox, 
 	double eps)
@@ -430,71 +494,108 @@ void AssignContoursToEdgeMap(const ContoursWithIds &contours,
 			endOfEdgeMap[endPt.edgeIndex][endPt.x] = i;
 	}
 
-	int currentlyRightOfContour = -1; //This usually corresponds to in the sea
-	vector<int> cornerVals;
-	cornerVals.resize(4);
-
-	//Determine if each corner is inside or outside
-	for(int i=0;i<8;i++)
+	//Track which paths have been processed
+	vector<bool> pathSentToOutput;
+	pathSentToOutput.resize(pathsWithinBbox.size());
+	for(size_t i=0; i<pathSentToOutput.size(); i++)
+		pathSentToOutput[i] = false;
+	
+	vector<vector<int> > collectedLoops;
+	bool running = true;
+	while(running)
 	{
-		int edgeIndex = i%4;
-		//cout << "side" << i << endl;
-		const map<double, int> &startPaths = startOnEdgeMap[edgeIndex];
-		const map<double, int> &endPaths = endOfEdgeMap[edgeIndex];
-		int largestIsStart = -1;
-		double largestVal = 0.0;
-		bool largestIsSet = false;
-		int smallestIsStart = -1;
-		double smallestVal = 0.0;
-		bool smallestIsSet = false;
-
-		for(map<double, int>::const_iterator it = startPaths.begin(); it != startPaths.end(); it ++)
+		//Pick any way that starts on an edge
+		int initialPathIndex = -1;
+		for(size_t i=0; i<startOnEdgeMap.size(); i++)
 		{
-			//cout << "start " << it->first << endl;
-			if(!smallestIsSet || it->first < smallestVal)
+			map<double, int> &thisEdge = startOnEdgeMap[i];
+			for(map<double, int>::const_iterator it=thisEdge.begin(); it != thisEdge.end(); it++)
 			{
-				smallestIsSet = true;
-				smallestVal = it->first;
-				smallestIsStart = true;
-			}
-			if(!largestIsSet || it->first > largestVal)
-			{
-				largestIsSet = true;
-				largestVal = it->first;
-				largestIsStart = true;
+				int pathIndex = it->second;
+				if(pathSentToOutput[pathIndex]) continue;
+				initialPathIndex = pathIndex;
 			}
 		}
-		for(map<double, int>::const_iterator it = endPaths.begin(); it != endPaths.end(); it ++)
+		if(initialPathIndex == -1)
 		{
-			//cout << "end " << it->first << endl;
-			if(!smallestIsSet || it->first < smallestVal)
-			{
-				smallestIsSet = true;
-				smallestVal = it->first;
-				smallestIsStart = false;
-			}
-			if(!largestIsSet || it->first > largestVal)
-			{
-				largestIsSet = true;
-				largestVal = it->first;
-				largestIsStart = false;
-			}
+			running = false;
+			continue;
 		}
 
-		//Store corner val in vector
-		if(edgeIndex==0 && largestIsSet) //Left edge (y increases down the screen)
-			currentlyRightOfContour = largestIsStart;
-		if(edgeIndex==1 && largestIsSet) //Bottom edge
-			currentlyRightOfContour = largestIsStart;
-		if(edgeIndex==2 && smallestIsSet) //Right edge
-			currentlyRightOfContour = smallestIsStart;
-		if(edgeIndex==3 && smallestIsSet) //Bottom edge
-			currentlyRightOfContour = smallestIsStart;			
-		cornerVals[edgeIndex] = currentlyRightOfContour;
+		int currentPathIndex = initialPathIndex;
+		vector<int> loopPaths;
+		loopPaths.push_back(initialPathIndex);
+		bool completingLoop = true;
+		while(completingLoop)
+		{
+			std::vector<class PointInfo> &currentPath = pathsWithinBbox[currentPathIndex];
+			class PointInfo &startPt = currentPath[0];
+			class PointInfo &endPt = currentPath[currentPath.size()-1];
+			//cout << "currentPathIndex " << currentPathIndex << endl;
+			//cout << startPt.x << "," << startPt.y << "," << startPt.edgeIndex << "," << startPt.nid << endl;
+			//cout << endPt.x << "," << endPt.y << "," << endPt.edgeIndex << "," << endPt.nid << endl;
+			if(endPt.edgeIndex == -1)
+			{
+				//cout << "loop ended without completion" << endl;
+				//Discard these paths as just too confusing
+				for(size_t i =0;i<loopPaths.size();i++)
+					pathSentToOutput[loopPaths[i]] = true;
+				completingLoop = false;
+				continue; //This indicates the path ended without hitting the edge, which is not good.
+			}
+
+			//Search for continuity of path
+			double cursor = -1.0;
+			if(endPt.edgeIndex == 0 || endPt.edgeIndex == 2)
+				cursor = endPt.y;
+			if(endPt.edgeIndex == 1 || endPt.edgeIndex == 3)
+				cursor = endPt.x;
+
+			int foundPathIndex = -1;
+			bool found = SearchForConnection(endPt.edgeIndex, cursor, startOnEdgeMap, pathSentToOutput, foundPathIndex);
+			if(!found)
+			{
+				//Strange error has occurred.
+				for(size_t i =0;i<loopPaths.size();i++)
+					pathSentToOutput[loopPaths[i]] = true;
+			}
+
+			bool loopComplete = false;
+			for(size_t i =0;i<loopPaths.size();i++)
+			{
+				if(loopPaths[i] == foundPathIndex)
+				{
+					loopComplete = true;
+					break;
+				}
+			}		
+
+			if(loopComplete)
+			{
+				//cout << "loop complete" << endl;
+				completingLoop = false;
+				for(size_t i =0;i<loopPaths.size();i++)
+					pathSentToOutput[loopPaths[i]] = true;
+				collectedLoops.push_back(loopPaths);
+			}
+			else
+			{
+				currentPathIndex = foundPathIndex;
+				loopPaths.push_back(foundPathIndex);
+			}
+		}
 	}
 
-	for(size_t i =0;i<cornerVals.size();i++)
-		cout << cornerVals[i] << endl;
+	for(size_t i=0;i<collectedLoops.size();i++)
+	{
+		cout << "loop: ";
+		vector<int> &loop = collectedLoops[i];
+		for(size_t j=0;j<loop.size();j++)
+		{
+			cout << loop[j] << ",";
+		}		
+		cout << endl;
+	}
 
 }
 
