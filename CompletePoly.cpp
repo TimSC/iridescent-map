@@ -2,6 +2,7 @@
 #include <vector>
 #include <iostream>
 #include <cmath>
+#include <map>
 #include <stdexcept>
 #include <stdint.h>
 #include "drawlib/LineLineIntersect.h"
@@ -10,6 +11,8 @@ typedef std::pair<double, double> Point;
 typedef std::pair<int64_t, Point> PointWithId;
 typedef std::vector<Point> Contour;
 typedef std::vector<PointWithId> ContourWithIds;
+typedef std::vector<ContourWithIds> ContoursWithIds;
+typedef map<int, map<double, int> > EdgeMap;
 
 int CompletePoly()
 {
@@ -19,8 +22,9 @@ int CompletePoly()
 
 bool IsPointInBbox(const Point &pt, const std::vector<double> &bbox)
 {
-	if(pt.first < bbox[0]) return false;
-	if(pt.first >= bbox[2]) return false;
+	//bbox defined as left,bottom,right,top
+	if(pt.first > bbox[0]) return false;
+	if(pt.first <= bbox[2]) return false;
 	if(pt.second < bbox[1]) return false;
 	if(pt.second >= bbox[3]) return false;
 	return true;
@@ -329,10 +333,8 @@ void PrintPathsWithinBbox(const std::vector<std::vector<class PointInfo> > &path
 	}
 }
 
-int main()
+void TestContourAnalyse()
 {
-	//Coastlines have land on the left, sea on the right
-
 	//left,bottom,right,top
 	std::vector<double> bbox;
 	bbox.push_back(0.0);
@@ -385,5 +387,144 @@ int main()
 
 	AnalyseContour(line5, bbox, 1e-6, pathsWithinBbox);
 	PrintPathsWithinBbox(pathsWithinBbox);
+}
+
+void AssignContoursToEdgeMap(const ContoursWithIds &contours, 
+	const std::vector<double> &bbox, 
+	double eps)
+{	
+	//Find sections of contours that are within the bbox
+	std::vector<std::vector<class PointInfo> > pathsWithinBbox;
+	for(size_t i=0; i<contours.size(); i++)
+	{
+		const ContourWithIds &contourWithIds = contours[i];	
+		std::vector<std::vector<class PointInfo> > pathsTmp;
+		AnalyseContour(contourWithIds, 
+			bbox, 
+			eps,
+			pathsTmp);
+		pathsWithinBbox.insert(pathsWithinBbox.end(), pathsTmp.begin(), pathsTmp.end());	
+	}
+	
+	//PrintPathsWithinBbox(pathsWithinBbox);
+
+	//Assign paths to edge maps
+	EdgeMap startOnEdgeMap, endOfEdgeMap;
+	for(size_t i=0; i<4; i++)
+	{
+		startOnEdgeMap[i] = map<double, int>();
+		endOfEdgeMap[i] = map<double, int>();
+	}
+	for(size_t i=0; i<pathsWithinBbox.size(); i++)
+	{
+		std::vector<class PointInfo> &path = pathsWithinBbox[i];
+		class PointInfo &startPt = path[0];
+		class PointInfo &endPt = path[path.size()-1];
+		if(startPt.edgeIndex == 0 || startPt.edgeIndex == 2) //Left or right edge
+			startOnEdgeMap[startPt.edgeIndex][startPt.y] = i;
+		if(startPt.edgeIndex == 1 || startPt.edgeIndex == 3) //Top or bottom edge
+			startOnEdgeMap[startPt.edgeIndex][startPt.x] = i;
+		if(endPt.edgeIndex == 0 || endPt.edgeIndex == 2) //Left or right edge
+			endOfEdgeMap[endPt.edgeIndex][endPt.y] = i;
+		if(endPt.edgeIndex == 1 || endPt.edgeIndex == 3) //Top or bottom edge
+			endOfEdgeMap[endPt.edgeIndex][endPt.x] = i;
+	}
+
+	int currentlyRightOfContour = -1; //This usually corresponds to in the sea
+	vector<int> cornerVals;
+	cornerVals.resize(4);
+
+	//Determine if each corner is inside or outside
+	for(int i=0;i<8;i++)
+	{
+		int edgeIndex = i%4;
+		//cout << "side" << i << endl;
+		const map<double, int> &startPaths = startOnEdgeMap[edgeIndex];
+		const map<double, int> &endPaths = endOfEdgeMap[edgeIndex];
+		int largestIsStart = -1;
+		double largestVal = 0.0;
+		bool largestIsSet = false;
+		int smallestIsStart = -1;
+		double smallestVal = 0.0;
+		bool smallestIsSet = false;
+
+		for(map<double, int>::const_iterator it = startPaths.begin(); it != startPaths.end(); it ++)
+		{
+			//cout << "start " << it->first << endl;
+			if(!smallestIsSet || it->first < smallestVal)
+			{
+				smallestIsSet = true;
+				smallestVal = it->first;
+				smallestIsStart = true;
+			}
+			if(!largestIsSet || it->first > largestVal)
+			{
+				largestIsSet = true;
+				largestVal = it->first;
+				largestIsStart = true;
+			}
+		}
+		for(map<double, int>::const_iterator it = endPaths.begin(); it != endPaths.end(); it ++)
+		{
+			//cout << "end " << it->first << endl;
+			if(!smallestIsSet || it->first < smallestVal)
+			{
+				smallestIsSet = true;
+				smallestVal = it->first;
+				smallestIsStart = false;
+			}
+			if(!largestIsSet || it->first > largestVal)
+			{
+				largestIsSet = true;
+				largestVal = it->first;
+				largestIsStart = false;
+			}
+		}
+
+		//Store corner val in vector
+		if(edgeIndex==0 && largestIsSet) //Left edge (y increases down the screen)
+			currentlyRightOfContour = largestIsStart;
+		if(edgeIndex==1 && largestIsSet) //Bottom edge
+			currentlyRightOfContour = largestIsStart;
+		if(edgeIndex==2 && smallestIsSet) //Right edge
+			currentlyRightOfContour = smallestIsStart;
+		if(edgeIndex==3 && smallestIsSet) //Bottom edge
+			currentlyRightOfContour = smallestIsStart;			
+		cornerVals[edgeIndex] = currentlyRightOfContour;
+	}
+
+	for(size_t i =0;i<cornerVals.size();i++)
+		cout << cornerVals[i] << endl;
+
+}
+
+int main()
+{
+	//Coastlines have land on the left, sea on the right
+	//y axis is down the screen, like cairo
+
+	//left,bottom,right,top
+	std::vector<double> bbox;
+	bbox.push_back(0.0);
+	bbox.push_back(1.0);
+	bbox.push_back(1.0);
+	bbox.push_back(0.0);
+
+	cout << "example1, land as vertical bar between vertical sea strips" << endl;
+	ContoursWithIds example1Contours;
+	ContourWithIds line1;
+	line1.push_back(PointWithId(1, Point(0.5, -0.1)));
+	line1.push_back(PointWithId(2, Point(0.5, 0.4)));
+	line1.push_back(PointWithId(3, Point(0.5, 1.1)));
+	example1Contours.push_back(line1);
+	ContourWithIds line2;
+	line2.push_back(PointWithId(3, Point(0.6, 1.1)));
+	line2.push_back(PointWithId(2, Point(0.6, 0.4)));
+	line2.push_back(PointWithId(1, Point(0.6, -0.1)));
+	example1Contours.push_back(line2);
+
+	std::vector<std::vector<class PointInfo> > pathsWithinBbox;
+	AssignContoursToEdgeMap(example1Contours, bbox, 1e-6);
+
 }
 
