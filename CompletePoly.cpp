@@ -306,6 +306,8 @@ void AnalyseContour(const ContourWithIds &contour,
 		if(path.size() < 2) continue;
 		class PointInfo &startPt = path[0];
 		class PointInfo &endPt = path[path.size()-1];
+		if(startPt.nid == endPt.nid && startPt.nid != 0)
+			continue; //Path is closed, so skip
 		if(startPt.edgeIndex == -1)
 			startPt.edgeIndex = IsPointOnEdge(Point(startPt.x, startPt.y), eps, bbox);
 		if(endPt.edgeIndex == -1)
