@@ -595,6 +595,26 @@ void AssignContoursToEdgeMap(const ContoursWithIds &contours,
 			cout << loop[j] << ",";
 		}		
 		cout << endl;
+
+		const std::vector<class PointInfo> &firstPath = pathsWithinBbox[loop[0]];
+		const class PointInfo &firstPt = firstPath[0];
+
+		int prevEdgeIndex = -1;
+		for(size_t j=0;j<loop.size();j++)
+		{
+			const std::vector<class PointInfo> &path = pathsWithinBbox[loop[j]];
+			cout << "prevEdgeIndex: " << prevEdgeIndex << endl;
+			cout << loop[j] << ": ";
+			for(size_t k=0; k< path.size(); k++)
+			{
+				const class PointInfo &pt = path[k];
+				cout << pt.x << "," << pt.y << "," << pt.edgeIndex << "," << pt.nid << endl;
+				prevEdgeIndex = pt.edgeIndex;
+			}
+		}
+
+		cout << "prevEdgeIndex: " << prevEdgeIndex << endl;
+		cout << "first: " << firstPt.x << "," << firstPt.y << "," << firstPt.edgeIndex << "," << firstPt.nid << endl;
 	}
 
 }
@@ -618,11 +638,11 @@ int main()
 	line1.push_back(PointWithId(2, Point(0.5, 0.4)));
 	line1.push_back(PointWithId(3, Point(0.5, 1.1)));
 	example1Contours.push_back(line1);
-	ContourWithIds line2;
+	/*ContourWithIds line2;
 	line2.push_back(PointWithId(3, Point(0.6, 1.1)));
 	line2.push_back(PointWithId(2, Point(0.6, 0.4)));
 	line2.push_back(PointWithId(1, Point(0.6, -0.1)));
-	example1Contours.push_back(line2);
+	example1Contours.push_back(line2);*/
 
 	std::vector<std::vector<class PointInfo> > pathsWithinBbox;
 	AssignContoursToEdgeMap(example1Contours, bbox, 1e-6);
