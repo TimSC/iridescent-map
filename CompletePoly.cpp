@@ -741,5 +741,37 @@ int main()
 	AssignContoursToEdgeMap(example4Contours, bbox, 1e-6, collectedLoops);
 	PrintPathsWithinBbox(collectedLoops);
 
+	cout << "example5, land in bottom right and top left" << endl;
+	ContoursWithIds example5Contours;
+	ContourWithIds line5;
+	line5.push_back(PointWithId(1, Point(1.1, 0.7)));
+	line5.push_back(PointWithId(2, Point(0.7, 0.7)));
+	line5.push_back(PointWithId(3, Point(0.7, 1.1)));
+	example5Contours.push_back(line5);
+	ContourWithIds line6;
+	line6.push_back(PointWithId(4, Point(-0.1, 0.4)));
+	line6.push_back(PointWithId(5, Point(0.4, 0.4)));
+	line6.push_back(PointWithId(6, Point(0.4, -0.1)));
+	example5Contours.push_back(line6);
+
+	AssignContoursToEdgeMap(example5Contours, bbox, 1e-6, collectedLoops);
+	PrintPathsWithinBbox(collectedLoops);
+
+	cout << "example6, sea in bottom right and top left" << endl;
+	ContoursWithIds example6Contours;
+	ContourWithIds line7;
+	line7.push_back(PointWithId(1, Point(0.7, 1.1)));
+	line7.push_back(PointWithId(2, Point(0.7, 0.7)));
+	line7.push_back(PointWithId(3, Point(1.1, 0.7)));
+	example6Contours.push_back(line7);
+	ContourWithIds line8;
+	line8.push_back(PointWithId(4, Point(0.4, -0.1)));
+	line8.push_back(PointWithId(5, Point(0.4, 0.4)));
+	line8.push_back(PointWithId(6, Point(-0.1, 0.4)));
+	example6Contours.push_back(line8);
+
+	AssignContoursToEdgeMap(example6Contours, bbox, 1e-6, collectedLoops);
+	PrintPathsWithinBbox(collectedLoops);
+
 }
 
