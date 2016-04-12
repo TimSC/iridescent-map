@@ -111,7 +111,7 @@ void DetectLineBboxEntryExit(const PointWithId &pt1, const PointWithId &pt2, con
 				bbox[edgeIndex], bbox[1], //Line 2 start
 				bbox[edgeIndex], bbox[3], //Line 2 end
 				ix, iy);
-			if(ok && iy >= bbox[1] && iy <= bbox[3])
+			if(ok && iy <= bbox[1] && iy >= bbox[3])
 			{
 				class Crossing crossing;
 				crossing.ix = ix;
@@ -248,7 +248,6 @@ void AnalyseContour(const ContourWithIds &contour,
 
 		std::vector<class Crossing> crossingsSorted;
 		DetectLineBboxEntryExit(*prevPt, *pt, bbox, crossingsSorted);
-		cout << i << "," << crossingsSorted.size() << endl;
 
 		if(crossingsSorted.size() == 0)
 		{
@@ -531,7 +530,7 @@ void AssignContoursToEdgeMap(const ContoursWithIds &contours,
 		pathsWithinBbox.insert(pathsWithinBbox.end(), pathsTmp.begin(), pathsTmp.end());	
 	}
 	
-	PrintPathsWithinBbox(pathsWithinBbox);
+	//PrintPathsWithinBbox(pathsWithinBbox);
 
 	//Assign paths to edge maps
 	EdgeMap startOnEdgeMap, endOfEdgeMap;
@@ -697,7 +696,7 @@ int main()
 	bbox.push_back(1.0);
 	bbox.push_back(0.0);
 
-	/*cout << "example1, land as right of image, sea on left" << endl;
+	cout << "example1, land as right of image, sea on left" << endl;
 	ContoursWithIds example1Contours;
 	ContourWithIds line1;
 	line1.push_back(PointWithId(1, Point(0.5, -0.1)));
@@ -718,7 +717,7 @@ int main()
 	example2Contours.push_back(line2);
 
 	AssignContoursToEdgeMap(example2Contours, bbox, 1e-6, collectedLoops);
-	PrintPathsWithinBbox(collectedLoops);*/
+	PrintPathsWithinBbox(collectedLoops);
 
 	cout << "example3, land in bottom right" << endl;
 	ContoursWithIds example3Contours;
@@ -728,13 +727,9 @@ int main()
 	line3.push_back(PointWithId(3, Point(0.5, 1.1)));
 	example3Contours.push_back(line3);
 
-	//AssignContoursToEdgeMap(example3Contours, bbox, 1e-6, collectedLoops);
-	//PrintPathsWithinBbox(collectedLoops);
+	AssignContoursToEdgeMap(example3Contours, bbox, 1e-6, collectedLoops);
+	PrintPathsWithinBbox(collectedLoops);
 
-	std::vector<std::vector<class PointInfo> > pathsWithinBbox;
-	AnalyseContour(line3, bbox, 
-	1e-6,pathsWithinBbox);
-	PrintPathsWithinBbox(pathsWithinBbox);
 
 }
 
