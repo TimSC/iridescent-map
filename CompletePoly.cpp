@@ -248,6 +248,7 @@ void AnalyseContour(const ContourWithIds &contour,
 
 		std::vector<class Crossing> crossingsSorted;
 		DetectLineBboxEntryExit(*prevPt, *pt, bbox, crossingsSorted);
+		cout << i << "," << crossingsSorted.size() << endl;
 
 		if(crossingsSorted.size() == 0)
 		{
