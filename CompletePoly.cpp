@@ -530,7 +530,7 @@ void AssignContoursToEdgeMap(const ContoursWithIds &contours,
 		pathsWithinBbox.insert(pathsWithinBbox.end(), pathsTmp.begin(), pathsTmp.end());	
 	}
 	
-	//PrintPathsWithinBbox(pathsWithinBbox);
+	PrintPathsWithinBbox(pathsWithinBbox);
 
 	//Assign paths to edge maps
 	EdgeMap startOnEdgeMap, endOfEdgeMap;
@@ -596,7 +596,7 @@ void AssignContoursToEdgeMap(const ContoursWithIds &contours,
 			//cout << endPt.x << "," << endPt.y << "," << endPt.edgeIndex << "," << endPt.nid << endl;
 			if(endPt.edgeIndex == -1)
 			{
-				//cout << "loop ended without completion" << endl;
+				cout << "loop ended without completion" << endl;
 				//Discard these paths as just too confusing
 				for(size_t i =0;i<loopPaths.size();i++)
 					pathSentToOutput[loopPaths[i]] = true;
@@ -616,6 +616,7 @@ void AssignContoursToEdgeMap(const ContoursWithIds &contours,
 			if(!found)
 			{
 				//Strange error has occurred.
+				//cout << "strange error" << endl;
 				for(size_t i =0;i<loopPaths.size();i++)
 					pathSentToOutput[loopPaths[i]] = true;
 			}
@@ -686,6 +687,7 @@ int main()
 {
 	//Coastlines have land on the left, sea on the right
 	//y axis is down the screen, like cairo
+	std::vector<std::vector<class PointInfo> > collectedLoops;
 
 	//left,bottom,right,top
 	std::vector<double> bbox;
@@ -694,7 +696,7 @@ int main()
 	bbox.push_back(1.0);
 	bbox.push_back(0.0);
 
-	cout << "example1, land as right of image, sea on left" << endl;
+	/*cout << "example1, land as right of image, sea on left" << endl;
 	ContoursWithIds example1Contours;
 	ContourWithIds line1;
 	line1.push_back(PointWithId(1, Point(0.5, -0.1)));
@@ -702,7 +704,6 @@ int main()
 	line1.push_back(PointWithId(3, Point(0.5, 1.1)));
 	example1Contours.push_back(line1);
 
-	std::vector<std::vector<class PointInfo> > collectedLoops;
 	AssignContoursToEdgeMap(example1Contours, bbox, 1e-6, collectedLoops);
 	PrintPathsWithinBbox(collectedLoops);
 
@@ -716,18 +717,23 @@ int main()
 	example2Contours.push_back(line2);
 
 	AssignContoursToEdgeMap(example2Contours, bbox, 1e-6, collectedLoops);
-	PrintPathsWithinBbox(collectedLoops);
+	PrintPathsWithinBbox(collectedLoops);*/
 
 	cout << "example3, land in bottom right" << endl;
 	ContoursWithIds example3Contours;
 	ContourWithIds line3;
-	line3.push_back(PointWithId(1, Point(0.5, 1.1)));
+	line3.push_back(PointWithId(1, Point(1.1, 0.5)));
 	line3.push_back(PointWithId(2, Point(0.5, 0.5)));
-	line3.push_back(PointWithId(3, Point(1.1, 0.5)));
+	line3.push_back(PointWithId(3, Point(0.5, 1.1)));
 	example3Contours.push_back(line3);
 
-	AssignContoursToEdgeMap(example3Contours, bbox, 1e-6, collectedLoops);
-	PrintPathsWithinBbox(collectedLoops);
+	//AssignContoursToEdgeMap(example3Contours, bbox, 1e-6, collectedLoops);
+	//PrintPathsWithinBbox(collectedLoops);
+
+	std::vector<std::vector<class PointInfo> > pathsWithinBbox;
+	AnalyseContour(line3, bbox, 
+	1e-6,pathsWithinBbox);
+	PrintPathsWithinBbox(pathsWithinBbox);
 
 }
 
