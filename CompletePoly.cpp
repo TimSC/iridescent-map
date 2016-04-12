@@ -521,12 +521,6 @@ void AssignContoursToEdgeMap(const ContoursWithIds &contours,
 	collectedLoopsOut.clear();
 	internalLoopsOut.clear();
 
-	//Mask of input contours that have been processed
-	vector<bool> inputContourProcessed;
-	inputContourProcessed.resize(contours.size());
-	for(size_t i=0; i<contours.size(); i++)
-		inputContourProcessed[i] = false;
-
 	//Find sections of contours that are within the bbox
 	std::vector<std::vector<class PointInfo> > pathsWithinBbox;
 	for(size_t i=0; i<contours.size(); i++)
@@ -538,8 +532,6 @@ void AssignContoursToEdgeMap(const ContoursWithIds &contours,
 			eps,
 			pathsTmp);
 		pathsWithinBbox.insert(pathsWithinBbox.end(), pathsTmp.begin(), pathsTmp.end());	
-		if(pathsWithinBbox.size() > 0)
-			inputContourProcessed[i] = true;
 	}
 	
 	//PrintPathsWithinBbox(pathsWithinBbox);
