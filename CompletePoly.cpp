@@ -730,6 +730,16 @@ int main()
 	AssignContoursToEdgeMap(example3Contours, bbox, 1e-6, collectedLoops);
 	PrintPathsWithinBbox(collectedLoops);
 
+	cout << "example4, sea in top right" << endl;
+	ContoursWithIds example4Contours;
+	ContourWithIds line4;
+	line4.push_back(PointWithId(1, Point(1.1, 0.5)));
+	line4.push_back(PointWithId(2, Point(0.5, 0.5)));
+	line4.push_back(PointWithId(3, Point(0.5, -0.1)));
+	example4Contours.push_back(line4);
+
+	AssignContoursToEdgeMap(example4Contours, bbox, 1e-6, collectedLoops);
+	PrintPathsWithinBbox(collectedLoops);
 
 }
 
