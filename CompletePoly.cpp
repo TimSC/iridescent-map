@@ -14,12 +14,6 @@ typedef std::vector<PointWithId> ContourWithIds;
 typedef std::vector<ContourWithIds> ContoursWithIds;
 typedef map<int, map<double, int> > EdgeMap;
 
-int CompletePoly()
-{
-
-
-}
-
 bool IsPointInBbox(const Point &pt, const std::vector<double> &bbox)
 {
 	//bbox defined as left,bottom,right,top
@@ -324,6 +318,7 @@ void PrintPathsWithinBbox(const std::vector<std::vector<class PointInfo> > &path
 {
 	for(size_t i=0;i<pathsWithinBbox.size();i++)
 	{
+		cout << "loop: ";
 		const std::vector<class PointInfo> &line = pathsWithinBbox[i];
 		for(size_t j=0; j< line.size(); j++)
 		{
@@ -452,11 +447,46 @@ bool SearchForConnection(int edgeIndex, double cursor, EdgeMap &startOnEdgeMap, 
 	return false;
 }
 
+void TraverseCorners(int prevEdgeIndex, int edgeIndex, const std::vector<double> &bbox, std::vector<class PointInfo> &appendToOut)
+{
+	//bbox defined as left,bottom,right,top
+	if(prevEdgeIndex == -1) return;
+	if(prevEdgeIndex == edgeIndex) return;
+	int currentEdge = prevEdgeIndex;
+	while(currentEdge != edgeIndex)
+	{
+		currentEdge --;
+		if(currentEdge < 0) currentEdge += 4;
+		//cout << "Change to edge " << currentEdge << " from " << (currentEdge+1)%4 << endl;
+		switch(currentEdge)
+		{
+		case 0:
+			//Bottom left
+			appendToOut.push_back(PointInfo(bbox[0], bbox[1], 0, 0));
+			break;
+		case 1:
+			//Bottom right
+			appendToOut.push_back(PointInfo(bbox[2], bbox[1], 1, 0));
+			break;
+		case 2:
+			//Top right
+			appendToOut.push_back(PointInfo(bbox[2], bbox[3], 2, 0));
+			break;
+		case 3:
+			//Top left
+			appendToOut.push_back(PointInfo(bbox[0], bbox[3], 3, 0));
+			break;
+		}
+	}
+}
 
 void AssignContoursToEdgeMap(const ContoursWithIds &contours, 
 	const std::vector<double> &bbox, 
-	double eps)
+	double eps,
+	std::vector<std::vector<class PointInfo> > &collectedLoopsOut)
 {	
+	collectedLoopsOut.clear();
+
 	//Find sections of contours that are within the bbox
 	std::vector<std::vector<class PointInfo> > pathsWithinBbox;
 	for(size_t i=0; i<contours.size(); i++)
@@ -588,33 +618,35 @@ void AssignContoursToEdgeMap(const ContoursWithIds &contours,
 
 	for(size_t i=0;i<collectedLoops.size();i++)
 	{
-		cout << "loop: ";
+		//cout << "loop: ";
 		vector<int> &loop = collectedLoops[i];
-		for(size_t j=0;j<loop.size();j++)
-		{
-			cout << loop[j] << ",";
-		}		
-		cout << endl;
 
 		const std::vector<class PointInfo> &firstPath = pathsWithinBbox[loop[0]];
 		const class PointInfo &firstPt = firstPath[0];
+		std::vector<class PointInfo> loopOut;
 
 		int prevEdgeIndex = -1;
 		for(size_t j=0;j<loop.size();j++)
 		{
 			const std::vector<class PointInfo> &path = pathsWithinBbox[loop[j]];
-			cout << "prevEdgeIndex: " << prevEdgeIndex << endl;
-			cout << loop[j] << ": ";
+			//cout << "prevEdgeIndex: " << prevEdgeIndex << endl;
+			const class PointInfo &pathFirstPt = path[0];
+			TraverseCorners(prevEdgeIndex, pathFirstPt.edgeIndex, bbox, loopOut);
+
+			//cout << loop[j] << ": ";
 			for(size_t k=0; k< path.size(); k++)
 			{
 				const class PointInfo &pt = path[k];
-				cout << pt.x << "," << pt.y << "," << pt.edgeIndex << "," << pt.nid << endl;
+				//cout << pt.x << "," << pt.y << "," << pt.edgeIndex << "," << pt.nid << endl;
+				loopOut.push_back(PointInfo(pt.x, pt.y, pt.edgeIndex, pt.nid));
 				prevEdgeIndex = pt.edgeIndex;
 			}
 		}
 
-		cout << "prevEdgeIndex: " << prevEdgeIndex << endl;
-		cout << "first: " << firstPt.x << "," << firstPt.y << "," << firstPt.edgeIndex << "," << firstPt.nid << endl;
+		//cout << "prevEdgeIndex: " << prevEdgeIndex << endl;
+		//cout << "first: " << firstPt.x << "," << firstPt.y << "," << firstPt.edgeIndex << "," << firstPt.nid << endl;
+		TraverseCorners(prevEdgeIndex, firstPt.edgeIndex, bbox, loopOut);
+		collectedLoopsOut.push_back(loopOut);
 	}
 
 }
@@ -631,21 +663,29 @@ int main()
 	bbox.push_back(1.0);
 	bbox.push_back(0.0);
 
-	cout << "example1, land as vertical bar between vertical sea strips" << endl;
+	cout << "example1, land as left, sea on right" << endl;
 	ContoursWithIds example1Contours;
 	ContourWithIds line1;
 	line1.push_back(PointWithId(1, Point(0.5, -0.1)));
 	line1.push_back(PointWithId(2, Point(0.5, 0.4)));
 	line1.push_back(PointWithId(3, Point(0.5, 1.1)));
 	example1Contours.push_back(line1);
-	/*ContourWithIds line2;
+
+	std::vector<std::vector<class PointInfo> > collectedLoops;
+	AssignContoursToEdgeMap(example1Contours, bbox, 1e-6, collectedLoops);
+	PrintPathsWithinBbox(collectedLoops);
+
+	cout << "example2, land as vertical bar between vertical sea strips" << endl;
+	ContoursWithIds example2Contours;
+	ContourWithIds line2;
 	line2.push_back(PointWithId(3, Point(0.6, 1.1)));
 	line2.push_back(PointWithId(2, Point(0.6, 0.4)));
 	line2.push_back(PointWithId(1, Point(0.6, -0.1)));
-	example1Contours.push_back(line2);*/
+	example2Contours.push_back(line1);
+	example2Contours.push_back(line2);
 
-	std::vector<std::vector<class PointInfo> > pathsWithinBbox;
-	AssignContoursToEdgeMap(example1Contours, bbox, 1e-6);
+	AssignContoursToEdgeMap(example2Contours, bbox, 1e-6, collectedLoops);
+	PrintPathsWithinBbox(collectedLoops);
 
 }
 
