@@ -447,13 +447,16 @@ bool SearchForConnection(int edgeIndex, double cursor, EdgeMap &startOnEdgeMap, 
 	return false;
 }
 
-void TraverseCorners(int prevEdgeIndex, int edgeIndex, const std::vector<double> &bbox, std::vector<class PointInfo> &appendToOut)
+void TraverseCorners(int prevEdgeIndex, int edgeIndex, const std::vector<double> &bbox, 
+	int direction,
+	std::vector<class PointInfo> &appendToOut)
 {
 	//bbox defined as left,bottom,right,top
 	if(prevEdgeIndex == -1) return;
 	if(prevEdgeIndex == edgeIndex) return;
 	int currentEdge = prevEdgeIndex;
-	while(currentEdge != edgeIndex)
+
+	if(direction == -1) while(currentEdge != edgeIndex)
 	{
 		currentEdge --;
 		if(currentEdge < 0) currentEdge += 4;
@@ -478,6 +481,33 @@ void TraverseCorners(int prevEdgeIndex, int edgeIndex, const std::vector<double>
 			break;
 		}
 	}
+
+	if(direction == 1) while(currentEdge != edgeIndex)
+	{
+		currentEdge ++;
+		if(currentEdge >= 4) currentEdge -= 4;
+		//cout << "Change to edge " << currentEdge << " from " << (currentEdge+1)%4 << endl;
+		switch(currentEdge)
+		{
+		case 0:
+			//Top left
+			appendToOut.push_back(PointInfo(bbox[0], bbox[3], 3, 0));
+			break;
+		case 1:
+			//Bottom left
+			appendToOut.push_back(PointInfo(bbox[0], bbox[1], 0, 0));
+			break;
+		case 2:
+			//Bottom right
+			appendToOut.push_back(PointInfo(bbox[2], bbox[1], 1, 0));
+			break;
+		case 3:
+			//Top right
+			appendToOut.push_back(PointInfo(bbox[2], bbox[3], 2, 0));
+			break;
+		}
+	}
+
 }
 
 void AssignContoursToEdgeMap(const ContoursWithIds &contours, 
@@ -626,12 +656,13 @@ void AssignContoursToEdgeMap(const ContoursWithIds &contours,
 		std::vector<class PointInfo> loopOut;
 
 		int prevEdgeIndex = -1;
+		int direction = 1;
 		for(size_t j=0;j<loop.size();j++)
 		{
 			const std::vector<class PointInfo> &path = pathsWithinBbox[loop[j]];
 			//cout << "prevEdgeIndex: " << prevEdgeIndex << endl;
 			const class PointInfo &pathFirstPt = path[0];
-			TraverseCorners(prevEdgeIndex, pathFirstPt.edgeIndex, bbox, loopOut);
+			TraverseCorners(prevEdgeIndex, pathFirstPt.edgeIndex, bbox, direction, loopOut);
 
 			//cout << loop[j] << ": ";
 			for(size_t k=0; k< path.size(); k++)
@@ -645,7 +676,7 @@ void AssignContoursToEdgeMap(const ContoursWithIds &contours,
 
 		//cout << "prevEdgeIndex: " << prevEdgeIndex << endl;
 		//cout << "first: " << firstPt.x << "," << firstPt.y << "," << firstPt.edgeIndex << "," << firstPt.nid << endl;
-		TraverseCorners(prevEdgeIndex, firstPt.edgeIndex, bbox, loopOut);
+		TraverseCorners(prevEdgeIndex, firstPt.edgeIndex, bbox, direction, loopOut);
 		collectedLoopsOut.push_back(loopOut);
 	}
 
@@ -663,7 +694,7 @@ int main()
 	bbox.push_back(1.0);
 	bbox.push_back(0.0);
 
-	cout << "example1, land as left, sea on right" << endl;
+	cout << "example1, land as right of image, sea on left" << endl;
 	ContoursWithIds example1Contours;
 	ContourWithIds line1;
 	line1.push_back(PointWithId(1, Point(0.5, -0.1)));
