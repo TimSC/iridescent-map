@@ -442,7 +442,9 @@ bool SearchForConnection(int edgeIndex, double cursor, int direction,
 	//Try the other edges, then 
 	for(int i=0; i<4; i++)
 	{
-		edgeIndex = (edgeIndex+1) % 4;
+		edgeIndex = edgeIndex+direction;
+		while(edgeIndex < 0) edgeIndex += 4;
+		edgeIndex %= 4;
 		const map<double, int> &currentEdge = startOnEdgeMap[edgeIndex];
 		if(edgeDirection == 1)
 		{
@@ -625,7 +627,7 @@ void CompletePolygonsInBbox(const ContoursWithIds &contours,
 			//cout << endPt.x << "," << endPt.y << "," << endPt.edgeIndex << "," << endPt.nid << endl;
 			if(endPt.edgeIndex == -1)
 			{
-				cout << "loop ended without completion" << endl;
+				//cout << "loop ended without completion" << endl;
 				//Discard these paths as just too confusing
 				for(size_t i =0;i<loopPaths.size();i++)
 					pathSentToOutput[loopPaths[i]] = true;
@@ -843,6 +845,11 @@ int main()
 		PrintPathsWithinBbox(internalLoops);
 		assert(reverseInternalLoops.size() == 0);
 	}
+	else
+	{
+		assert(internalLoops.size() == 0);
+		PrintPathsWithinBbox(reverseInternalLoops);
+	}
 
 	cout << "example8, inland sea" << endl;
 	ContoursWithIds example8Contours;
@@ -860,6 +867,11 @@ int main()
 	{
 		assert(internalLoops.size() == 0);
 		PrintPathsWithinBbox(reverseInternalLoops);
+	}
+	else
+	{
+		PrintPathsWithinBbox(internalLoops);
+		assert(reverseInternalLoops.size() == 0);
 	}
 
 	cout << "example9, half a doughnut" << endl;
