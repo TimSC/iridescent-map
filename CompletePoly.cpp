@@ -847,5 +847,23 @@ int main()
 	assert(collectedLoops.size() == 0);
 	assert(internalLoops.size() == 0);
 	PrintPathsWithinBbox(reverseInternalLoops);
+
+	cout << "example9, half a doughnut" << endl;
+	ContoursWithIds example9Contours;
+	ContourWithIds line11;
+	line11.push_back(PointWithId(1, Point(0.1, -0.1)));
+	line11.push_back(PointWithId(2, Point(0.1, 0.5)));
+	line11.push_back(PointWithId(3, Point(0.9, 0.5)));
+	line11.push_back(PointWithId(4, Point(0.9, -0.1)));
+	example9Contours.push_back(line11);
+	ContourWithIds line12;
+	line12.push_back(PointWithId(5, Point(0.8, -0.1)));
+	line12.push_back(PointWithId(6, Point(0.8, 0.5)));
+	line12.push_back(PointWithId(7, Point(0.2, 0.5)));
+	line12.push_back(PointWithId(8, Point(0.2, -0.1)));
+	example9Contours.push_back(line12);
+
+	AssignContoursToEdgeMap(example9Contours, bbox, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	PrintPathsWithinBbox(collectedLoops);
 }
 
