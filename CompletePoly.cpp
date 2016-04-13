@@ -1,3 +1,4 @@
+//\file Provides a solution for converting incomplete coastlines to polygons. See CompletePolygonsInBbox() for details.
 #include <utility>
 #include <vector>
 #include <iostream>
@@ -532,6 +533,14 @@ void TraverseCorners(int prevEdgeIndex, int edgeIndex, const std::vector<double>
 	}
 
 }
+
+/** \brief Convert partial polygons to full polygons that are within a specified bounding box.
+
+One unique characteristic of OSM tile data is that coastlines are expressed as a way, but
+we need to have a complete polygon for drawing purposes. Often, the way will extend to
+outside the tile of interest. This function trims the ways and connects them to form a complete
+polygon that is suitable for drawing. 
+*/
 
 void CompletePolygonsInBbox(const ContoursWithIds &contours, 
 	const std::vector<double> &bbox, 
