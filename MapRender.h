@@ -12,6 +12,10 @@ typedef std::map<class LineProperties, Contours> StyledLines;
 typedef std::map<class TextProperties, std::vector<class TextLabel> > StyledText;
 typedef std::vector<LabelsByImportance> RenderLabelList;
 typedef std::vector<std::pair<double, double> > RenderLabelListOffsets;
+typedef std::pair<int64_t, Point> PointWithId;
+typedef std::vector<PointWithId> ContourWithIds;
+typedef std::vector<ContourWithIds> ContoursWithIds;
+typedef std::pair<ContourWithIds, ContoursWithIds> PolygonWithIds;
 
 class DrawTreeNode
 {

@@ -105,8 +105,8 @@ FeaturePoi::FeaturePoi(const FeaturePoi &a)
 	*this = a;
 }
 
-FeaturePoi::FeaturePoi(const TagMap &tags, double lat, double lon) :
-	tags(tags), lat(lat), lon(lon)
+FeaturePoi::FeaturePoi(const TagMap &tags, int64_t nid, double lat, double lon) :
+	tags(tags), nid(nid), lat(lat), lon(lon)
 {
 
 }
@@ -119,6 +119,7 @@ FeaturePoi::~FeaturePoi()
 FeaturePoi& FeaturePoi::operator=(const FeaturePoi &arg)
 {
 	tags = arg.tags;
+	nid = arg.nid;
 	lat = arg.lat;
 	lon = arg.lon;
 }
@@ -161,9 +162,10 @@ void FeatureStore::FoundLine(const TagMap &tags,
 }
 
 void FeatureStore::FoundPoi(const TagMap &tags, 
+	int64_t nid,
 	double lat, double lon)
 {
-	this->pois.push_back(FeaturePoi(tags, lat, lon));
+	this->pois.push_back(FeaturePoi(tags, nid, lat, lon));
 }
 
 void FeatureStore::Clear()
@@ -321,7 +323,7 @@ void Regrouper::FindPois(class IRegroupResultHandler *output)
 			continue; //Empty tags indicates this is not a POI
 
 		if(output != NULL)
-			output->FoundPoi(node.tags, node.lat, node.lon);
+			output->FoundPoi(node.tags, node.objId, node.lat, node.lon);
 	}
 }
 

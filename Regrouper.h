@@ -52,11 +52,12 @@ class FeaturePoi
 {
 public:
 	TagMap tags;
+	int64_t nid;
 	double lat, lon;
 
 	FeaturePoi();
 	FeaturePoi(const FeaturePoi &a);
-	FeaturePoi(const TagMap &tags, double lat, double lon);
+	FeaturePoi(const TagMap &tags, int64_t nid, double lat, double lon);
 	virtual ~FeaturePoi();
 	FeaturePoi& operator=(const FeaturePoi &arg);
 };
@@ -70,6 +71,7 @@ public:
 	virtual void FoundLine(const TagMap &tags, 
 		const IdLatLonList &shape) {};
 	virtual void FoundPoi(const TagMap &tags, 
+		int64_t nid,
 		double lat, double lon) {};
 };
 
@@ -91,6 +93,7 @@ public:
 	virtual void FoundLine(const TagMap &tags, 
 		const IdLatLonList &shape);
 	virtual void FoundPoi(const TagMap &tags, 
+		int64_t nid,
 		double lat, double lon);
 	virtual void Clear();
 };
