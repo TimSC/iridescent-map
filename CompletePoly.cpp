@@ -401,20 +401,24 @@ void TestContourAnalyse()
 	PrintPathsWithinBbox(pathsWithinBbox);
 }
 
-bool SearchForConnection(int edgeIndex, double cursor, EdgeMap &startOnEdgeMap, const vector<bool> &pathSentToOutput, int &foundPathIndexOut)
+bool SearchForConnection(int edgeIndex, double cursor, int direction, 
+	EdgeMap &startOnEdgeMap, const vector<bool> &pathSentToOutput, int &foundPathIndexOut)
 {
 	foundPathIndexOut = -1;
-	int direction = 0;
+	int edgeDirection = 0;
 	if(edgeIndex >= 0 && edgeIndex <= 1)
-		direction = 1;
+		edgeDirection = 1;
 	if(edgeIndex >= 2 && edgeIndex <= 3)
-		direction = -1;
+		edgeDirection = -1;
+	if(direction == -1)
+		edgeDirection *= -1;
+
 	//cout << cursor <<"," << direction << endl;	
 	
 	//Check first side
 	const map<double, int> &thisEdge = startOnEdgeMap[edgeIndex];
 
-	if(direction == 1)
+	if(edgeDirection == 1)
 	{
 		for(map<double, int>::const_iterator it = thisEdge.begin(); it != thisEdge.end(); it++)
 		{
@@ -440,7 +444,7 @@ bool SearchForConnection(int edgeIndex, double cursor, EdgeMap &startOnEdgeMap, 
 	{
 		edgeIndex = (edgeIndex+1) % 4;
 		const map<double, int> &currentEdge = startOnEdgeMap[edgeIndex];
-		if(direction == 1)
+		if(edgeDirection == 1)
 		{
 			for(map<double, int>::const_iterator it = currentEdge.begin(); it != currentEdge.end(); it++)
 			{
@@ -527,7 +531,7 @@ void TraverseCorners(int prevEdgeIndex, int edgeIndex, const std::vector<double>
 
 }
 
-void AssignContoursToEdgeMap(const ContoursWithIds &contours, 
+void CompletePolygonsInBbox(const ContoursWithIds &contours, 
 	const std::vector<double> &bbox, 
 	int direction, 
 	double eps,
@@ -538,6 +542,9 @@ void AssignContoursToEdgeMap(const ContoursWithIds &contours,
 	collectedLoopsOut.clear();
 	internalLoopsOut.clear();
 	reverseInternalLoopsOut.clear();
+
+	if(direction != 1 && direction != -1)
+		throw new invalid_argument("Direction must be 1 or -1.");
 
 	//Find sections of contours that are within the bbox
 	std::vector<std::vector<class PointInfo> > pathsWithinBbox;
@@ -634,7 +641,7 @@ void AssignContoursToEdgeMap(const ContoursWithIds &contours,
 				cursor = endPt.x;
 
 			int foundPathIndex = -1;
-			bool found = SearchForConnection(endPt.edgeIndex, cursor, startOnEdgeMap, pathSentToOutput, foundPathIndex);
+			bool found = SearchForConnection(endPt.edgeIndex, cursor, direction, startOnEdgeMap, pathSentToOutput, foundPathIndex);
 			if(!found)
 			{
 				//Strange error has occurred.
@@ -719,7 +726,7 @@ void AssignContoursToEdgeMap(const ContoursWithIds &contours,
 		std::vector<class PointInfo> pathCopy = path;
 		pathCopy.pop_back();
 		bool windingDirection = CheckWinding(pathCopy);
-		if(windingDirection)
+		if(windingDirection == (direction == 1))
 			internalLoopsOut.push_back(pathCopy);
 		else
 			reverseInternalLoopsOut.push_back(pathCopy);
@@ -733,6 +740,7 @@ int main()
 	//Coastlines have land on the left, sea on the right
 	//y axis is down the screen, like cairo
 	std::vector<std::vector<class PointInfo> > collectedLoops, internalLoops, reverseInternalLoops;
+	int direction = 1;
 
 	//left,bottom,right,top
 	std::vector<double> bbox;
@@ -749,7 +757,7 @@ int main()
 	line1.push_back(PointWithId(3, Point(0.5, 1.1)));
 	example1Contours.push_back(line1);
 
-	AssignContoursToEdgeMap(example1Contours, bbox, 1, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	CompletePolygonsInBbox(example1Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
 	PrintPathsWithinBbox(collectedLoops);
 
 	cout << "example2, land as vertical bar between vertical sea strips" << endl;
@@ -761,7 +769,7 @@ int main()
 	example2Contours.push_back(line1);
 	example2Contours.push_back(line2);
 
-	AssignContoursToEdgeMap(example2Contours, bbox, 1, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	CompletePolygonsInBbox(example2Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
 	PrintPathsWithinBbox(collectedLoops);
 
 	cout << "example3, land in bottom right" << endl;
@@ -772,7 +780,7 @@ int main()
 	line3.push_back(PointWithId(3, Point(0.5, 1.1)));
 	example3Contours.push_back(line3);
 
-	AssignContoursToEdgeMap(example3Contours, bbox, 1, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	CompletePolygonsInBbox(example3Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
 	PrintPathsWithinBbox(collectedLoops);
 
 	cout << "example4, sea in top right" << endl;
@@ -783,7 +791,7 @@ int main()
 	line4.push_back(PointWithId(3, Point(0.5, -0.1)));
 	example4Contours.push_back(line4);
 
-	AssignContoursToEdgeMap(example4Contours, bbox, 1, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	CompletePolygonsInBbox(example4Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
 	PrintPathsWithinBbox(collectedLoops);
 
 	cout << "example5, land in bottom right and top left" << endl;
@@ -799,7 +807,7 @@ int main()
 	line6.push_back(PointWithId(6, Point(0.4, -0.1)));
 	example5Contours.push_back(line6);
 
-	AssignContoursToEdgeMap(example5Contours, bbox, 1, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	CompletePolygonsInBbox(example5Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
 	PrintPathsWithinBbox(collectedLoops);
 
 	cout << "example6, sea in bottom right and top left" << endl;
@@ -815,7 +823,7 @@ int main()
 	line8.push_back(PointWithId(6, Point(-0.1, 0.4)));
 	example6Contours.push_back(line8);
 
-	AssignContoursToEdgeMap(example6Contours, bbox, 1, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	CompletePolygonsInBbox(example6Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
 	PrintPathsWithinBbox(collectedLoops);
 
 	cout << "example7, land island" << endl;
@@ -828,10 +836,13 @@ int main()
 	line9.push_back(PointWithId(1, Point(0.3, 0.3)));
 	example7Contours.push_back(line9);
 
-	AssignContoursToEdgeMap(example7Contours, bbox, 1, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	CompletePolygonsInBbox(example7Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
 	PrintPathsWithinBbox(collectedLoops);
-	PrintPathsWithinBbox(internalLoops);
-	assert(reverseInternalLoops.size() == 0);
+	if(direction == 1)
+	{
+		PrintPathsWithinBbox(internalLoops);
+		assert(reverseInternalLoops.size() == 0);
+	}
 
 	cout << "example8, inland sea" << endl;
 	ContoursWithIds example8Contours;
@@ -843,10 +854,13 @@ int main()
 	line10.push_back(PointWithId(1, Point(0.3, 0.3)));
 	example8Contours.push_back(line10);
 
-	AssignContoursToEdgeMap(example8Contours, bbox, 1, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	CompletePolygonsInBbox(example8Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
 	assert(collectedLoops.size() == 0);
-	assert(internalLoops.size() == 0);
-	PrintPathsWithinBbox(reverseInternalLoops);
+	if(direction == 1)
+	{
+		assert(internalLoops.size() == 0);
+		PrintPathsWithinBbox(reverseInternalLoops);
+	}
 
 	cout << "example9, half a doughnut" << endl;
 	ContoursWithIds example9Contours;
@@ -863,7 +877,7 @@ int main()
 	line12.push_back(PointWithId(8, Point(0.2, -0.1)));
 	example9Contours.push_back(line12);
 
-	AssignContoursToEdgeMap(example9Contours, bbox, 1, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	CompletePolygonsInBbox(example9Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
 	PrintPathsWithinBbox(collectedLoops);
 }
 
