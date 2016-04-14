@@ -681,14 +681,19 @@ void FeaturesToLandPolys::Draw(class IDrawLib *output)
 		reverseInternalLoops);
 
 	ShapeProperties properties(1.0, 1.0, 1.0);
-	std::vector<Polygon> test;
-	PointInfoVecToPolygons(collectedLoops, test);
+	std::vector<Polygon> landPolys;
+	PointInfoVecToPolygons(collectedLoops, landPolys);
+	output->AddDrawPolygonsCmd(landPolys, properties);
+
+	std::vector<Polygon> islands;
+	PointInfoVecToPolygons(internalLoops, islands);
+	output->AddDrawPolygonsCmd(islands, properties);
+
+	ShapeProperties seaPolyPoperties(0.0, 0.0, 0.3);
+	std::vector<Polygon> inlandSea;
+	PointInfoVecToPolygons(reverseInternalLoops, inlandSea);
+	output->AddDrawPolygonsCmd(inlandSea, seaPolyPoperties);
 	
-	output->AddDrawPolygonsCmd(test, properties);
-	/*class LineProperties prop(1.0, 1.0, 1.0);
-	Contours linesNoIds;
-	StripIdsFromContours(merged, linesNoIds);
-	output->AddDrawLinesCmd(linesNoIds, prop);*/
 }
 
 // **********************************************
