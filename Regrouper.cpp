@@ -242,6 +242,9 @@ void Regrouper::FindAreas(class IRegroupResultHandler *output)
 				std::vector<int64_t> &wayNodes = refWay->refs;
 				for(size_t k =0; k < wayNodes.size(); k++)
 				{
+					if(k == wayNodes.size()-1 && wayNodes[k] == wayNodes[0])
+						continue; //Don't include node twice since this is an area and assumed to be closed.
+
 					class OsmNode *nd = this->nodeIdMap[wayNodes[k]];
 					if(nd == NULL) continue;
 					
@@ -276,6 +279,9 @@ void Regrouper::FindAreas(class IRegroupResultHandler *output)
 		IdLatLonList outerShape;
 		for(size_t k =0; k < wayNodes.size(); k++)
 		{
+			if(k == wayNodes.size()-1 && wayNodes[k] == wayNodes[0])
+				continue; //Don't include node twice since this is an area and assumed to be closed.
+
 			class OsmNode *nd = this->nodeIdMap[wayNodes[k]];
 			if(nd == NULL) continue;
 			outerShape.push_back(IdLatLon(nd->lat, nd->lon, nd->objId));

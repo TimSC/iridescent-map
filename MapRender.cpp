@@ -143,7 +143,7 @@ FeatureConverter::FeatureConverter(class IDrawLib *output) : output(output)
 
 void FeatureConverter::Convert(int zoom, class FeatureStore &featureStore, class ITransform &transform, class Style &style)
 {
-	//Render polygons to draw tree
+	//Find polygons, get associated style, send to output renderers
 	for(size_t i=0;i<featureStore.areas.size();i++)
 	{
 		ContoursWithIds outers;
@@ -187,7 +187,7 @@ void FeatureConverter::Convert(int zoom, class FeatureStore &featureStore, class
 			shapesOutput[j]->OutArea(styleDef, polygons, area.tags);
 	}
 
-	//Render lines to draw tree
+	//Find lines, get associated style, send to output renderers
 	for(size_t i=0;i<featureStore.lines.size();i++)
 	{
 		ContourWithIds line1;
@@ -207,7 +207,7 @@ void FeatureConverter::Convert(int zoom, class FeatureStore &featureStore, class
 
 	}
 
-	//Render points to draw tree
+	//Find points, get associated style, send to output renderers
 	for(size_t i=0;i<featureStore.pois.size();i++)
 	{
 		class FeaturePoi &poi = featureStore.pois[i];
@@ -251,7 +251,9 @@ void FeatureConverter::ToDrawSpace(double nx, double ny, double &px, double &py)
 
 // **************************************************************
 
-///Takes a stream of objects with associated styles from FeatureConverter and converts them into draw commands that reside in a DrawTreeNode based drawTree.
+/**Takes a stream of objects with associated styles from FeatureConverter 
+and converts them into draw commands that reside in a DrawTreeNode based drawTree.
+*/
 class FeaturesToDrawCmds : public IFeatureConverterResult
 {
 public:
@@ -304,6 +306,11 @@ void FeaturesToDrawCmds::DrawToTree(StyleDef &styleDef, const std::vector<Polygo
 		LayerDef &layerDef = styleAndLayerDef.first;
 		StyleAttributes &styleAttributes = styleAndLayerDef.second;
 
+		//Surpress coastline
+		TagMap::const_iterator natural = styleAttributes.find("coastline");
+		if(natural != styleAttributes.end() && natural->second == "yes")
+			continue;
+
 		class ShapeProperties prop(double(rand()%100) / 100.0, double(rand()%100) / 100.0, double(rand()%100) / 100.0);
 		TagMap::const_iterator colIt = styleAttributes.find("polygon-fill");
 		if(colIt != styleAttributes.end()) {
@@ -327,6 +334,11 @@ void FeaturesToDrawCmds::DrawToTree(StyleDef &styleDef, const std::vector<Polygo
 		StyleAndLayerDef &styleAndLayerDef = styleDef[j];
 		LayerDef &layerDef = styleAndLayerDef.first;
 		StyleAttributes &styleAttributes = styleAndLayerDef.second;
+
+		//Surpress coastline
+		TagMap::const_iterator natural = styleAttributes.find("coastline");
+		if(natural != styleAttributes.end() && natural->second == "yes")
+			continue;
 
 		class LineProperties lineProp1(1.0, 1.0, 1.0);
 
@@ -371,7 +383,8 @@ void FeaturesToDrawCmds::DrawToTree(StyleDef &styleDef, const std::vector<Polygo
 
 // **********************************************
 
-/*\brief Takes a stream of objects with associated styles from FeatureConverter and stores where labels should be drawn (output to member poiLabels).
+/*\brief Takes a stream of objects with associated styles from FeatureConverter 
+and stores where labels should be drawn (output to member poiLabels).
 It also filters the objects so that only named objects are passed on.
 The result is passed to LabelEngine.
 */
@@ -505,20 +518,57 @@ public:
 
 void FeaturesToLandPolys::OutArea(StyleDef &styleDef, const std::vector<PolygonWithIds> &polygons, const TagMap &tags)
 {
+	//Filter to find coastlines
+	for(size_t i=0; i<styleDef.size();i++)
+	{
+		const StyleAndLayerDef &styleAndLayerDef = styleDef[i];
+		const StyleAttributes &styleAttributes = styleAndLayerDef.second;
 
+		TagMap::const_iterator natural = styleAttributes.find("coastline");
+		if(natural == styleAttributes.end())
+			continue;
+		for(size_t i=0; i<polygons.size(); i++)
+		{
+			cout << "area s" << endl;
+			const PolygonWithIds &poly = polygons[i];
+			for(size_t j=0; j< poly.first.size(); j++)
+			{
+				const PointWithId &pt = poly.first[j];
+				cout << pt.first << "," << pt.second.first << "," << pt.second.second << endl;
+			}
+			cout << "e" << endl;
+		}
+	}
 }
 
 void FeaturesToLandPolys::OutLine(StyleDef &styleDef, const ContoursWithIds &lines, const TagMap &tags)
 {
-	for(size_t i=0; i<lines.size(); i++)
+	//Filter to find coastlines
+	for(size_t i=0; i<styleDef.size();i++)
 	{
-		const ContourWithIds &line = lines[i];
-		for(size_t j=0; j< line.size(); j++)
+		const StyleAndLayerDef &styleAndLayerDef = styleDef[i];
+		const StyleAttributes &styleAttributes = styleAndLayerDef.second;
+
+		TagMap::const_iterator natural = styleAttributes.find("coastline");
+		if(natural == styleAttributes.end())
+			continue;
+
+		cout << natural->second << endl;
+
+		for(size_t i=0; i<lines.size(); i++)
 		{
-			const PointWithId &pt = line[j];
-			cout << pt.first << "," << pt.second.first << "," << pt.second.second << endl;
+			cout << "line s" << endl;
+			const ContourWithIds &line = lines[i];
+			for(size_t j=0; j< line.size(); j++)
+			{
+				const PointWithId &pt = line[j];
+				cout << pt.first << "," << pt.second.first << "," << pt.second.second << endl;
+			}
+			cout << "line e" << endl;
 		}
 	}
+
+
 }
 
 // **********************************************

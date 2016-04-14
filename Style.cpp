@@ -143,6 +143,16 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		styleDefOut.push_back(StyleAndLayerDef(layerDef, style));
 		return 1;
 	}
+	if(it != tags.end() && it->second == "coastline")
+	{
+		StyleAttributes style;
+		style["coastline"] = "yes";
+
+		LayerDef layerDef;
+
+		styleDefOut.push_back(StyleAndLayerDef(layerDef, style));
+		return 1;
+	}
 
 	it = tags.find("building");
 	if(it != tags.end() && featuretype == Area)
