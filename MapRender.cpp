@@ -507,6 +507,9 @@ void FeaturesToLabelEngine::OutPoi(StyleDef &styleDef, int64_t nid, double px, d
 ///analysis.
 class FeaturesToLandPolys : public IFeatureConverterResult
 {
+protected:
+	std::vector<ContourWithIds> coastlines;
+
 public:
 	FeaturesToLandPolys() {};
 	virtual ~FeaturesToLandPolys() {};
@@ -514,6 +517,8 @@ public:
 	void OutArea(StyleDef &styleDef, const std::vector<PolygonWithIds> &polygons, const TagMap &tags);
 	void OutLine(StyleDef &styleDef, const ContoursWithIds &lineAsPolygons, const TagMap &tags);
 	void OutPoi(StyleDef &styleDef, int64_t nid, double px, double py, const TagMap &tags) {};
+
+	void Draw(class IDrawLib *output);
 };
 
 void FeaturesToLandPolys::OutArea(StyleDef &styleDef, const std::vector<PolygonWithIds> &polygons, const TagMap &tags)
@@ -529,14 +534,13 @@ void FeaturesToLandPolys::OutArea(StyleDef &styleDef, const std::vector<PolygonW
 			continue;
 		for(size_t i=0; i<polygons.size(); i++)
 		{
-			cout << "area s" << endl;
 			const PolygonWithIds &poly = polygons[i];
-			for(size_t j=0; j< poly.first.size(); j++)
-			{
-				const PointWithId &pt = poly.first[j];
-				cout << pt.first << "," << pt.second.first << "," << pt.second.second << endl;
-			}
-			cout << "e" << endl;
+			ContourWithIds outerContour = poly.first;
+
+			//Add the initial node to the last to indicate it is a closed path (supposedly)
+			outerContour.push_back(outerContour[0]);
+
+			this->coastlines.push_back(outerContour);
 		}
 	}
 }
@@ -553,22 +557,25 @@ void FeaturesToLandPolys::OutLine(StyleDef &styleDef, const ContoursWithIds &lin
 		if(natural == styleAttributes.end())
 			continue;
 
-		cout << natural->second << endl;
-
 		for(size_t i=0; i<lines.size(); i++)
 		{
-			cout << "line s" << endl;
 			const ContourWithIds &line = lines[i];
-			for(size_t j=0; j< line.size(); j++)
-			{
-				const PointWithId &pt = line[j];
-				cout << pt.first << "," << pt.second.first << "," << pt.second.second << endl;
-			}
-			cout << "line e" << endl;
+			this->coastlines.push_back(line);
 		}
 	}
 
+}
 
+void FeaturesToLandPolys::Draw(class IDrawLib *output)
+{
+	//Merge ways into continues paths, where possible
+	
+	class LineProperties prop(1.0, 1.0, 1.0);
+	Contours linesNoIds;
+	StripIdsFromContours(this->coastlines, linesNoIds);
+	output->AddDrawLinesCmd(linesNoIds, prop);
+
+	cout << "draw" << endl;
 }
 
 // **********************************************
@@ -609,6 +616,8 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore,
 
 	if(renderObjects)
 	{
+		featuresToLandPolys.Draw(this->output);
+
 		//Interate through draw tree to produce ordered draw commands
 		drawTree.WriteDrawCommands(this->output);
 		this->output->Draw();
