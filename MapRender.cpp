@@ -680,20 +680,33 @@ void FeaturesToLandPolys::Draw(class IDrawLib *output)
 		internalLoops,
 		reverseInternalLoops);
 
-	ShapeProperties properties(1.0, 1.0, 1.0);
+	ShapeProperties landPolyProperties(241.0/255.0, 238.0/255.0, 232.0/255.0);
+	ShapeProperties seaPolyPoperties(181.0/255.0, 208.0/255.0, 208.0/255.0);
+
+	//Background sea
+	std::vector<Polygon> backgroundPoly;
+	Contour backgroundShape;
+	backgroundShape.push_back(Point(x1, y1));
+	backgroundShape.push_back(Point(x1, y2));
+	backgroundShape.push_back(Point(x2, y2));
+	backgroundShape.push_back(Point(x2, y1));
+	backgroundPoly.push_back(Polygon(backgroundShape, Contours()));
+	output->AddDrawPolygonsCmd(backgroundPoly, seaPolyPoperties);
+
+	//Main coast
 	std::vector<Polygon> landPolys;
 	PointInfoVecToPolygons(collectedLoops, landPolys);
-	output->AddDrawPolygonsCmd(landPolys, properties);
+	output->AddDrawPolygonsCmd(landPolys, landPolyProperties);
 
-	std::vector<Polygon> islands;
-	PointInfoVecToPolygons(internalLoops, islands);
-	output->AddDrawPolygonsCmd(islands, properties);
-
-	ShapeProperties seaPolyPoperties(0.0, 0.0, 0.3);
+	//Small inland seas
 	std::vector<Polygon> inlandSea;
 	PointInfoVecToPolygons(reverseInternalLoops, inlandSea);
 	output->AddDrawPolygonsCmd(inlandSea, seaPolyPoperties);
 	
+	//Islands
+	std::vector<Polygon> islands;
+	PointInfoVecToPolygons(internalLoops, islands);
+	output->AddDrawPolygonsCmd(islands, landPolyProperties);
 }
 
 // **********************************************

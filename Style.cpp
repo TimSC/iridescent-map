@@ -17,12 +17,12 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		if(it->second == "motorway")
 		{
 			knownType = true;
-			style["line-color"] = "#000055";
+			style["line-color"] = "#7d92ae";
 			style["line-width"] = "8";
 			layerDef.push_back(1);
 			layerDef.push_back(4);
 
-			style2["line-color"] = "#0000aa";
+			style2["line-color"] = "#89a4ca";
 			style2["line-width"] = "6";
 			layerDef2.push_back(1);
 			layerDef2.push_back(10);
@@ -31,12 +31,12 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		if(it->second == "trunk")
 		{
 			knownType = true;
-			style["line-color"] = "#005500";
+			style["line-color"] = "#87b988";
 			style["line-width"] = "7";
 			layerDef.push_back(1);
 			layerDef.push_back(3);
 
-			style2["line-color"] = "#00aa00";
+			style2["line-color"] = "#87b988";
 			style2["line-width"] = "5";
 			layerDef2.push_back(1);
 			layerDef2.push_back(9);
@@ -45,12 +45,12 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		if(it->second == "primary")
 		{
 			knownType = true;
-			style["line-color"] = "#550000";
+			style["line-color"] = "#dc9e9e";
 			style["line-width"] = "5";
 			layerDef.push_back(1);
 			layerDef.push_back(2);
 
-			style2["line-color"] = "#aa0000";
+			style2["line-color"] = "#dc9e9e";
 			style2["line-width"] = "3";
 			layerDef2.push_back(1);
 			layerDef2.push_back(8);
@@ -59,12 +59,12 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		if(it->second == "secondary")
 		{
 			knownType = true;
-			style["line-color"] = "#55555500";
+			style["line-color"] = "#d4ae7b";
 			style["line-width"] = "4";
 			layerDef.push_back(1);
 			layerDef.push_back(1);
 
-			style2["line-color"] = "#aaaaaa00";
+			style2["line-color"] = "#f8d5a9";
 			style2["line-width"] = "3";
 			layerDef2.push_back(1);
 			layerDef2.push_back(7);
@@ -76,12 +76,12 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 			style["text-size"] = "9";
 			style["text-importance"] = "1";
 			style["text-placement"] = "line";
-			style["line-color"] = "#000000";
-			style["line-width"] = "3";
+			style["line-color"] = "#cdcdcc";
+			style["line-width"] = "4";
 			layerDef.push_back(1);
 			layerDef.push_back(0);
 
-			style2["line-color"] = "#aaaaaa";
+			style2["line-color"] = "#fefefe";
 			style2["line-width"] = "2";
 			layerDef2.push_back(1);
 			layerDef2.push_back(6);
@@ -102,7 +102,7 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 	if(it != tags.end() && featuretype == Area)
 	{
 		StyleAttributes style;
-		style["polygon-fill"] = "#444444";
+		style["polygon-fill"] = "#dcdcdc";
 		style["polygon-gamma"] = "1.0";
 
 		LayerDef layerDef;
@@ -117,12 +117,12 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 	if(it != tags.end() && it->second == "water" && featuretype == Area)
 	{
 		StyleAttributes style;
-		style["polygon-fill"] = "#0000ff";
+		style["polygon-fill"] = "#b5d0d0";
 		style["text-name"] = "[name]";
-		style["text-fill"] = "#88f";
+		style["text-fill"] = "#7aa6d2";
 		style["text-size"] = "9";
 		style["text-importance"] = "2";
-		style["text-halo-fill"] = "#4488";
+		style["text-halo-fill"] = "#ffffff";
 
 		LayerDef layerDef;
 		layerDef.push_back(1);
@@ -134,7 +134,7 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 	if(it != tags.end() && it->second == "wood" && featuretype == Area)
 	{
 		StyleAttributes style;
-		style["polygon-fill"] = "#00aa00";
+		style["polygon-fill"] = "#aed1a0";
 
 		LayerDef layerDef;
 		layerDef.push_back(1);
@@ -158,7 +158,7 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 	if(it != tags.end() && featuretype == Area)
 	{
 		StyleAttributes style;
-		style["polygon-fill"] = "#aa7777";
+		style["polygon-fill"] = "#beacac";
 
 		LayerDef layerDef;
 		layerDef.push_back(1);
@@ -194,8 +194,8 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		style["text-name"] = "[name]";
 		style["text-size"] = "12";
 		style["text-importance"] = "4";
-		style["text-fill"] = "#0f0";
-		style["text-halo-fill"] = "#0a08";
+		style["text-fill"] = "#000";
+		style["text-halo-fill"] = "#fff8";
 		style["text-halo-radius"] = "2.5";
 		LayerDef layerDef;
 		layerDef.push_back(3);
