@@ -36,6 +36,83 @@ void StripIdsFromPolygons(const std::vector<PolygonWithIds> &polygonsWithIds, st
 		StripIdsFromPolygon(polygonsWithIds[i], polygons[i]);
 }
 
+// ***************************************
+
+void MergeContours(const std::vector<ContourWithIds> &contours, bool allowReversing, std::vector<ContourWithIds> &mergedOut)
+{
+	mergedOut.clear();
+
+	vector<bool> mask;
+	mask.resize(contours.size());
+	for(size_t i=0; i<mask.size(); i++)
+		mask[i] = false;
+	
+	while(true)
+	{
+		//Select a way from input
+		const ContourWithIds *initial = NULL;
+		for(size_t i=0; i<mask.size(); i++)
+		{
+			if(mask[i]) continue;
+			initial = &contours[i];
+			mask[i] = true;
+			break;
+		}
+		if(initial == NULL) break;
+		ContourWithIds current = *initial;
+		
+		//Try to join other ways to the current one
+		while(true)
+		{
+			bool progressMade = false;
+			for(size_t i=0; i<mask.size(); i++)
+			{
+				if(mask[i]) continue;
+				const ContourWithIds chk = contours[i];
+				if(chk[0].first == current[current.size()-1].first)
+				{
+					current.insert(current.end(), chk.begin(), chk.end());
+					mask[i] = true;
+					progressMade = true;
+					continue;
+				}
+
+				if(chk[chk.size()-1].first == current[0].first)
+				{
+					current.insert(current.begin(), chk.begin(), chk.end());
+					mask[i] = true;
+					progressMade = true;
+					continue;
+				}
+
+				if(allowReversing && chk[chk.size()-1].first == current[current.size()-1].first)
+				{
+					ContourWithIds tmp = chk;
+					std::reverse(tmp.begin(), tmp.end());
+					current.insert(current.end(), tmp.begin(), tmp.end());
+					mask[i] = true;
+					progressMade = true;
+					continue;
+				}
+
+				if(allowReversing && chk[0].first == current[0].first)
+				{
+					ContourWithIds tmp = chk;
+					std::reverse(tmp.begin(), tmp.end());
+					current.insert(current.begin(), tmp.begin(), tmp.end());
+					mask[i] = true;
+					progressMade = true;
+					continue;
+				}
+
+			}
+			if(!progressMade) break;
+		}
+
+		mergedOut.push_back(current);
+	}
+}
+
 // ****************************************
 
 DrawTreeNode::DrawTreeNode()
@@ -569,13 +646,13 @@ void FeaturesToLandPolys::OutLine(StyleDef &styleDef, const ContoursWithIds &lin
 void FeaturesToLandPolys::Draw(class IDrawLib *output)
 {
 	//Merge ways into continues paths, where possible
-	
+	std::vector<ContourWithIds> merged;
+	MergeContours(this->coastlines, false, merged);
+
 	class LineProperties prop(1.0, 1.0, 1.0);
 	Contours linesNoIds;
-	StripIdsFromContours(this->coastlines, linesNoIds);
+	StripIdsFromContours(merged, linesNoIds);
 	output->AddDrawLinesCmd(linesNoIds, prop);
-
-	cout << "draw" << endl;
 }
 
 // **********************************************
