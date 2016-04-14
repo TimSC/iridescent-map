@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include "drawlib/LineLineIntersect.h"
+#include "CompletePoly.h"
 using namespace std;
 typedef std::pair<double, double> Point;
 typedef std::pair<int64_t, Point> PointWithId;
@@ -210,21 +211,13 @@ void DetectLineBboxEntryExit(const PointWithId &pt1, const PointWithId &pt2, con
 	}
 }
 
-class PointInfo
+PointInfo::PointInfo(double x, double y, int edgeIndex, int64_t nid)
 {
-public:
-	double x, y;
-	int edgeIndex; //-1 for no edge contact
-	int64_t nid; //Node ID. Zero is used for virtual added nodes
-
-	PointInfo(double x, double y, int edgeIndex, int64_t nid)
-	{
-		this->x = x;
-		this->y = y;
-		this->edgeIndex = edgeIndex;
-		this->nid = nid;
-	}
-};
+	this->x = x;
+	this->y = y;
+	this->edgeIndex = edgeIndex;
+	this->nid = nid;
+}
 
 bool CheckWinding(const std::vector<class PointInfo> &path)
 {
@@ -746,7 +739,7 @@ void CompletePolygonsInBbox(const ContoursWithIds &contours,
 	}
 }
 
-int main()
+void TestCompletePoly()
 {
 	//Coastlines have land on the left, sea on the right
 	//y axis is down the screen, like cairo
@@ -900,5 +893,22 @@ int main()
 
 	CompletePolygonsInBbox(example9Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
 	PrintPathsWithinBbox(collectedLoops);
+}
+
+void PointInfoVecToPolygons(const std::vector<std::vector<class PointInfo> > &loops, std::vector<Polygon> &out)
+{
+	out.clear();
+	Contours emptyInners;
+	for(size_t i=0; i<loops.size(); i++)
+	{
+		const std::vector<class PointInfo> &loop = loops[i];
+		Contour contour;
+		for(size_t j=0; j<loop.size(); j++)
+		{
+			const class PointInfo &pt = loop[j];
+			contour.push_back(Point(pt.x, pt.y));
+		}
+		out.push_back(Polygon(contour, emptyInners));
+	}
 }
 

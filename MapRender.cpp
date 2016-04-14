@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <stdio.h>
 #include "LabelEngine.h"
+#include "CompletePoly.h"
 using namespace std;
 
 void StripIdsFromContour(const ContourWithIds &line, Contour &lineNoIds)
@@ -69,9 +70,15 @@ void MergeContours(const std::vector<ContourWithIds> &contours, bool allowRevers
 			{
 				if(mask[i]) continue;
 				const ContourWithIds chk = contours[i];
+				if(chk.size() == 0)
+				{
+					mask[i] = true;
+					continue;
+				}
+
 				if(chk[0].first == current[current.size()-1].first)
 				{
-					current.insert(current.end(), chk.begin(), chk.end());
+					current.insert(current.end(), chk.begin()++, chk.end());
 					mask[i] = true;
 					progressMade = true;
 					continue;
@@ -79,7 +86,7 @@ void MergeContours(const std::vector<ContourWithIds> &contours, bool allowRevers
 
 				if(chk[chk.size()-1].first == current[0].first)
 				{
-					current.insert(current.begin(), chk.begin(), chk.end());
+					current.insert(current.begin(), chk.begin(), chk.end()--);
 					mask[i] = true;
 					progressMade = true;
 					continue;
@@ -89,7 +96,7 @@ void MergeContours(const std::vector<ContourWithIds> &contours, bool allowRevers
 				{
 					ContourWithIds tmp = chk;
 					std::reverse(tmp.begin(), tmp.end());
-					current.insert(current.end(), tmp.begin(), tmp.end());
+					current.insert(current.end(), tmp.begin()++, tmp.end());
 					mask[i] = true;
 					progressMade = true;
 					continue;
@@ -99,7 +106,7 @@ void MergeContours(const std::vector<ContourWithIds> &contours, bool allowRevers
 				{
 					ContourWithIds tmp = chk;
 					std::reverse(tmp.begin(), tmp.end());
-					current.insert(current.begin(), tmp.begin(), tmp.end());
+					current.insert(current.begin(), tmp.begin(), tmp.end()--);
 					mask[i] = true;
 					progressMade = true;
 					continue;
@@ -649,10 +656,39 @@ void FeaturesToLandPolys::Draw(class IDrawLib *output)
 	std::vector<ContourWithIds> merged;
 	MergeContours(this->coastlines, false, merged);
 
-	class LineProperties prop(1.0, 1.0, 1.0);
+	std::vector<std::vector<class PointInfo> > collectedLoops;
+	std::vector<std::vector<class PointInfo> > internalLoops;
+	std::vector<std::vector<class PointInfo> > reverseInternalLoops;
+
+	//left,bottom,right,top
+	double x1, x2, y1, y2;
+	output->GetDrawableExtents(x1,
+		y1,
+		x2,
+		y2);
+	std::vector<double> bbox;
+	bbox.push_back(x1);
+	bbox.push_back(y2);
+	bbox.push_back(x2);
+	bbox.push_back(y1);
+
+	CompletePolygonsInBbox(merged, 
+		bbox, 
+		1,
+		1e-6,
+		collectedLoops,
+		internalLoops,
+		reverseInternalLoops);
+
+	ShapeProperties properties(1.0, 1.0, 1.0);
+	std::vector<Polygon> test;
+	PointInfoVecToPolygons(collectedLoops, test);
+	
+	output->AddDrawPolygonsCmd(test, properties);
+	/*class LineProperties prop(1.0, 1.0, 1.0);
 	Contours linesNoIds;
 	StripIdsFromContours(merged, linesNoIds);
-	output->AddDrawLinesCmd(linesNoIds, prop);
+	output->AddDrawLinesCmd(linesNoIds, prop);*/
 }
 
 // **********************************************
