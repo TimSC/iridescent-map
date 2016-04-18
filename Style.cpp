@@ -19,6 +19,13 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 			knownType = true;
 			style["line-color"] = "#7d92ae";
 			style["line-width"] = "8";
+
+			style["text-name"] = "[name]";
+			style["text-size"] = "6";
+			style["text-importance"] = "10";
+			style["text-placement"] = "line";
+			style["text-fill"] = "#000";
+
 			layerDef.push_back(1);
 			layerDef.push_back(4);
 
@@ -33,6 +40,13 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 			knownType = true;
 			style["line-color"] = "#87b988";
 			style["line-width"] = "7";
+
+			style["text-name"] = "[name]";
+			style["text-size"] = "6";
+			style["text-importance"] = "10";
+			style["text-placement"] = "line";
+			style["text-fill"] = "#000";
+
 			layerDef.push_back(1);
 			layerDef.push_back(3);
 
@@ -47,6 +61,13 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 			knownType = true;
 			style["line-color"] = "#dc9e9e";
 			style["line-width"] = "5";
+
+			style["text-name"] = "[name]";
+			style["text-size"] = "6";
+			style["text-importance"] = "9";
+			style["text-placement"] = "line";
+			style["text-fill"] = "#000";
+
 			layerDef.push_back(1);
 			layerDef.push_back(2);
 
@@ -61,6 +82,13 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 			knownType = true;
 			style["line-color"] = "#d4ae7b";
 			style["line-width"] = "4";
+
+			style["text-name"] = "[name]";
+			style["text-size"] = "6";
+			style["text-importance"] = "8";
+			style["text-placement"] = "line";
+			style["text-fill"] = "#000";
+
 			layerDef.push_back(1);
 			layerDef.push_back(1);
 
@@ -72,12 +100,16 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		
 		if(!knownType)
 		{
-			style["text-name"] = "[name]";
+			/*style["text-name"] = "[name]";
 			style["text-size"] = "9";
 			style["text-importance"] = "1";
 			style["text-placement"] = "line";
-			style["line-color"] = "#cdcdcc88";
+			style["text-fill"] = "#fefefe";
+			style["text-halo-fill"] = "#00000066";
+			style["text-halo-radius"] = "2";*/
+			style["line-color"] = "#cdcdcc";
 			style["line-width"] = "4";
+
 			layerDef.push_back(1);
 			layerDef.push_back(0);
 
@@ -193,10 +225,10 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		StyleAttributes style;
 		style["text-name"] = "[name]";
 		style["text-size"] = "12";
-		style["text-importance"] = "4";
+		style["text-importance"] = "20";
 		style["text-fill"] = "#000";
 		style["text-halo-fill"] = "#fff8";
-		style["text-halo-radius"] = "2.5";
+		style["text-halo-radius"] = "4";
 		LayerDef layerDef;
 		layerDef.push_back(3);
 		layerDef.push_back(1);

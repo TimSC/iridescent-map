@@ -294,7 +294,7 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 		if(paramIt != label.styleAttributes.end())
 			ColourStringToRgba(paramIt->second.c_str(), fillR, fillG, fillB, fillA);
 
-		double haloR=0.0, haloG=0.0, haloB=0.0, haloA=1.0;
+		double haloR=0.0, haloG=0.0, haloB=0.0, haloA=0.0;
 		paramIt = label.styleAttributes.find("text-halo-fill");
 		if(paramIt != label.styleAttributes.end())
 			ColourStringToRgba(paramIt->second.c_str(), haloR, haloG, haloB, haloA);
@@ -323,7 +323,10 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 			labelProperties.lg = haloG;
 			labelProperties.lb = haloB;
 			labelProperties.la = haloA;
-			labelProperties.outline = true;
+			if(haloA > 0.0)
+				labelProperties.outline = true;
+			else 
+				labelProperties.outline = false;
 			labelProperties.fill = true;
 			labelProperties.lineWidth=haloWidth;
 
@@ -360,10 +363,13 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 			labelProperties.lr = haloR;
 			labelProperties.lg = haloG;
 			labelProperties.lb = haloB;
-			labelProperties.fontSize = textSize;
 			labelProperties.la = haloA;
-			labelProperties.outline = true;
+			if(haloA > 0.0)
+				labelProperties.outline = true;
+			else 
+				labelProperties.outline = false;
 			labelProperties.fill = true;
+
 			labelProperties.lineWidth=haloWidth;
 
 			//Get bounds
