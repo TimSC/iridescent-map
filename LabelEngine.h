@@ -28,18 +28,15 @@ class LabelDef
 {
 public:
 	class LabelBounds labelBounds;
-	class TextProperties foregroundProp;
-	class TextProperties backgroundProp;
+	class TextProperties properties;
 	std::vector<class TextLabel> labels;
 	std::vector<class TwistedTextLabel> twistedLabels;
 
 	LabelDef(const class LabelBounds &labelBounds,
-		const class TextProperties &foregroundProp,
-		const class TextProperties &backgroundProp,
+		const class TextProperties &properties,
 		const std::vector<class TextLabel> &labels);
 	LabelDef(const class LabelBounds &labelBounds,
-		const class TextProperties &foregroundProp,
-		const class TextProperties &backgroundProp,
+		const class TextProperties &properties,
 		const std::vector<class TwistedTextLabel> &twistedLabels);
 	LabelDef(const class LabelDef &a);
 	virtual ~LabelDef();

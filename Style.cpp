@@ -76,7 +76,7 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 			style["text-size"] = "9";
 			style["text-importance"] = "1";
 			style["text-placement"] = "line";
-			style["line-color"] = "#cdcdcc";
+			style["line-color"] = "#cdcdcc88";
 			style["line-width"] = "4";
 			layerDef.push_back(1);
 			layerDef.push_back(0);
@@ -122,7 +122,7 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		style["text-fill"] = "#7aa6d2";
 		style["text-size"] = "9";
 		style["text-importance"] = "2";
-		style["text-halo-fill"] = "#ffffff";
+		style["text-halo-fill"] = "#ffffff88";
 
 		LayerDef layerDef;
 		layerDef.push_back(1);

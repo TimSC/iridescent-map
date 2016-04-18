@@ -7,22 +7,18 @@
 using namespace std;
 
 LabelDef::LabelDef(const class LabelBounds &labelBounds,
-		const class TextProperties &foregroundProp,
-		const class TextProperties &backgroundProp,
+		const class TextProperties &properties,
 		const std::vector<class TextLabel> &labels) : labelBounds(labelBounds),
-		foregroundProp(foregroundProp),
-		backgroundProp(backgroundProp),
+		properties(properties),
 		labels(labels)
 {
 
 }
 
 LabelDef::LabelDef(const class LabelBounds &labelBounds,
-		const class TextProperties &foregroundProp,
-		const class TextProperties &backgroundProp,
+		const class TextProperties &properties,
 		const std::vector<class TwistedTextLabel> &twistedLabels) : labelBounds(labelBounds),
-		foregroundProp(foregroundProp),
-		backgroundProp(backgroundProp),
+		properties(properties),
 		twistedLabels(twistedLabels)
 {
 
@@ -41,8 +37,7 @@ LabelDef::~LabelDef()
 LabelDef& LabelDef::operator=(const LabelDef &arg)
 {
 	labelBounds = arg.labelBounds;
-	foregroundProp = arg.foregroundProp;
-	backgroundProp = arg.backgroundProp;
+	properties = arg.properties;
 	labels = arg.labels;
 	twistedLabels = arg.twistedLabels;
 }
@@ -320,17 +315,17 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 		if(placement == "point")
 		{
 			//Define draw styles
-			class TextProperties foregroundProp(fillR, fillG, fillB);
-			foregroundProp.fontSize = textSize;
-			foregroundProp.halign = 0.5;
-
-			class TextProperties backgroundProp(haloR, haloG, haloB);
-			backgroundProp.fontSize = textSize;
-			backgroundProp.la = haloA;
-			backgroundProp.outline = true;
-			backgroundProp.fill = false;
-			backgroundProp.lineWidth=haloWidth;
-			backgroundProp.halign = 0.5;
+			class TextProperties labelProperties(fillR, fillG, fillB);
+			labelProperties.fontSize = textSize;
+			labelProperties.halign = 0.5;
+			labelProperties.fa = fillA;
+			labelProperties.lr = haloR;
+			labelProperties.lg = haloG;
+			labelProperties.lb = haloB;
+			labelProperties.la = haloA;
+			labelProperties.outline = true;
+			labelProperties.fill = true;
+			labelProperties.lineWidth=haloWidth;
 
 			//Get bounds
 			double lx = label.shape[0].first;
@@ -339,7 +334,7 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 			TwistedTriangles bounds;
 			if(this->output != NULL)
 			{
-				this->output->GetTriangleBoundsText(outLabel, foregroundProp, 
+				this->output->GetTriangleBoundsText(outLabel, labelProperties, 
 					bounds);
 			}
 	
@@ -352,23 +347,24 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 			LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
 			if(it == organisedLabelsOut.end())
 				organisedLabelsOut[importance] = vector<class LabelDef>();
-			organisedLabelsOut[importance].push_back(LabelDef(labelBounds, foregroundProp, backgroundProp, textStrs));
+			organisedLabelsOut[importance].push_back(LabelDef(labelBounds, labelProperties, textStrs));
 		}
 		
 		if(placement == "line")
 		{
 			//Define draw styles
-			class TextProperties foregroundProp(fillR, fillG, fillB);
-			foregroundProp.fontSize = textSize;
-			foregroundProp.valign = 0.7;
-
-			class TextProperties backgroundProp(haloR, haloG, haloB);
-			backgroundProp.fontSize = textSize;
-			backgroundProp.la = haloA;
-			backgroundProp.outline = true;
-			backgroundProp.fill = false;
-			backgroundProp.lineWidth=haloWidth;
-			backgroundProp.valign = 0.7;
+			class TextProperties labelProperties(fillR, fillG, fillB);
+			labelProperties.fontSize = textSize;
+			labelProperties.valign = 0.7;
+			labelProperties.fa = fillA;
+			labelProperties.lr = haloR;
+			labelProperties.lg = haloG;
+			labelProperties.lb = haloB;
+			labelProperties.fontSize = textSize;
+			labelProperties.la = haloA;
+			labelProperties.outline = true;
+			labelProperties.fill = true;
+			labelProperties.lineWidth=haloWidth;
 
 			//Get bounds
 			std::vector<TwistedCurveCmd> path;
@@ -378,7 +374,7 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 			double pathLen = -1.0, textLen = -1.0;
 			if(this->output != NULL)
 			{
-				this->output->GetTriangleBoundsTwistedText(outLabel, foregroundProp, 
+				this->output->GetTriangleBoundsTwistedText(outLabel, labelProperties, 
 					bounds, pathLen, textLen);
 			}
 
@@ -395,7 +391,7 @@ void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels,
 			LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
 			if(it == organisedLabelsOut.end())
 				organisedLabelsOut[importance] = vector<class LabelDef>();
-			organisedLabelsOut[importance].push_back(LabelDef(labelBounds, foregroundProp, backgroundProp, textStrs));
+			organisedLabelsOut[importance].push_back(LabelDef(labelBounds, labelProperties, textStrs));
 		}
 	}
 }
@@ -459,24 +455,15 @@ void LabelEngine::WriteDrawCommands(const LabelsByImportance &organisedLabels)
 
 			if(labelDef.labels.size() > 0)
 			{
-				//Ghost background
-				if(this->output != NULL)
-					this->output->AddDrawTextCmd(labelDef.labels, labelDef.backgroundProp);
-
 				//Foreground text
 				if(this->output != NULL)
-					this->output->AddDrawTextCmd(labelDef.labels, labelDef.foregroundProp);
+					this->output->AddDrawTextCmd(labelDef.labels, labelDef.properties);
 			}
 
 			if(labelDef.twistedLabels.size() > 0)
 			{
-				//Ghost background
 				if(this->output != NULL)
-					this->output->AddDrawTwistedTextCmd(labelDef.twistedLabels, labelDef.backgroundProp);
-
-				//Foreground text
-				if(this->output != NULL)
-					this->output->AddDrawTwistedTextCmd(labelDef.twistedLabels, labelDef.foregroundProp);
+					this->output->AddDrawTwistedTextCmd(labelDef.twistedLabels, labelDef.properties);
 			}
 
 		}
