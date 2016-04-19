@@ -75,7 +75,7 @@ public:
 	LabelEngine(class IDrawLib *output);
 	virtual ~LabelEngine();
 
-	void LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels, LabelsByImportance &organisedLabelsOut);
+	void LabelPoisToStyledLabel(const std::vector<class PoiLabel> &poiLabels, LabelsByImportance &organisedLabelsOut);
 	void WriteDrawCommands(const LabelsByImportance &organisedLabels);
 	void RemoveOverlapping(const LabelsByImportance &organisedLabelsTmp, LabelsByImportance &organisedLabelsOut);
 };

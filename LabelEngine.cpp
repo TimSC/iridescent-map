@@ -259,145 +259,172 @@ LabelEngine::~LabelEngine()
 
 }
 
-void LabelEngine::LabelPoisToStyledLabel(std::vector<class PoiLabel> &poiLabels, LabelsByImportance &organisedLabelsOut)
+void LabelEngine::LabelPoisToStyledLabel(const std::vector<class PoiLabel> &poiLabels, LabelsByImportance &organisedLabelsOut)
 {
 	organisedLabelsOut.clear();
+
+	map<int, vector<const class PoiLabel *> > sortedByImportance;
+
+	//Sort labels by importance
 	for(size_t i=0;i < poiLabels.size(); i++)
 	{
-		class PoiLabel &label = poiLabels[i];
-
-		//Extract final draw parameters from tags and style
-		std::string &textName = label.textName;
-		std::string outString;
-		if(textName[0] == '[' && textName[textName.size()-1] == ']') 
-		{
-			std::string keyName(&textName[1], textName.size()-2);
-			TagMap::const_iterator it = label.tags.find(keyName);
-			if(it == label.tags.end()) continue;
-			outString = it->second;
-		}
-		else
-			outString = textName;
-
-		int textSize = 9;
-		StyleAttributes::const_iterator paramIt = label.styleAttributes.find("text-size");
-		if(paramIt != label.styleAttributes.end())
-			textSize = atoi(paramIt->second.c_str());
+		const class PoiLabel &label = poiLabels[i];
 
 		int importance = 0;
-		paramIt = label.styleAttributes.find("text-importance");
+		StyleAttributes::const_iterator paramIt = label.styleAttributes.find("text-importance");
 		if(paramIt != label.styleAttributes.end())
 			importance = atoi(paramIt->second.c_str());
 
-		double fillR=1.0, fillG=1.0, fillB=1.0, fillA = 1.0;
-		paramIt = label.styleAttributes.find("text-fill");
-		if(paramIt != label.styleAttributes.end())
-			ColourStringToRgba(paramIt->second.c_str(), fillR, fillG, fillB, fillA);
-
-		double haloR=0.0, haloG=0.0, haloB=0.0, haloA=0.0;
-		paramIt = label.styleAttributes.find("text-halo-fill");
-		if(paramIt != label.styleAttributes.end())
-			ColourStringToRgba(paramIt->second.c_str(), haloR, haloG, haloB, haloA);
-
-		double haloWidth=2.0;
-		paramIt = label.styleAttributes.find("text-halo-radius");
-		if(paramIt != label.styleAttributes.end())
-			haloWidth = atof(paramIt->second.c_str());
-
-		std::string placement = "point";
-		paramIt = label.styleAttributes.find("text-placement");
-		if(paramIt != label.styleAttributes.end())
-			placement = paramIt->second;
-
-		//A shape is required for any drawing to happen
-		if(label.shape.size() == 0) continue;
-
-		if(placement == "point")
+		map<int, vector<const class PoiLabel *> >::iterator importanceGroup = sortedByImportance.find(importance);
+		if(importanceGroup == sortedByImportance.end())
 		{
-			//Define draw styles
-			class TextProperties labelProperties(fillR, fillG, fillB);
-			labelProperties.fontSize = textSize;
-			labelProperties.halign = 0.5;
-			labelProperties.fa = fillA;
-			labelProperties.lr = haloR;
-			labelProperties.lg = haloG;
-			labelProperties.lb = haloB;
-			labelProperties.la = haloA;
-			if(haloA > 0.0)
-				labelProperties.outline = true;
-			else 
-				labelProperties.outline = false;
-			labelProperties.fill = true;
-			labelProperties.lineWidth=haloWidth;
-
-			//Get bounds
-			double lx = label.shape[0].first;
-			double ly = label.shape[0].second;
-			TextLabel outLabel(outString, lx, ly);
-			TwistedTriangles bounds;
-			if(this->output != NULL)
-			{
-				this->output->GetTriangleBoundsText(outLabel, labelProperties, 
-					bounds);
-			}
-	
-			std::vector<class TextLabel> textStrs;
-			textStrs.push_back(outLabel);
-
-			class LabelBounds labelBounds(bounds);
-
-			//Add label definition to list
-			LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
-			if(it == organisedLabelsOut.end())
-				organisedLabelsOut[importance] = vector<class LabelDef>();
-			organisedLabelsOut[importance].push_back(LabelDef(labelBounds, labelProperties, textStrs));
+			sortedByImportance[importance] = vector<const class PoiLabel *>();
+			importanceGroup = sortedByImportance.find(importance);
 		}
+		importanceGroup->second.push_back(&label);
 		
-		if(placement == "line")
+	}
+
+	//Created styled labels in importance order, check for collisions and try to fit in available space
+	for(map<int, vector<const class PoiLabel *> >::iterator it = sortedByImportance.begin();
+		it != sortedByImportance.end(); it++)
+	{
+		cout << it->first << endl;
+		int importance = it->first ;
+		vector<const class PoiLabel *> &groupLabels = it->second;
+
+		for(size_t i=0;i < groupLabels.size(); i++)
 		{
-			//Define draw styles
-			class TextProperties labelProperties(fillR, fillG, fillB);
-			labelProperties.fontSize = textSize;
-			labelProperties.valign = 0.7;
-			labelProperties.fa = fillA;
-			labelProperties.lr = haloR;
-			labelProperties.lg = haloG;
-			labelProperties.lb = haloB;
-			labelProperties.la = haloA;
-			if(haloA > 0.0)
-				labelProperties.outline = true;
-			else 
-				labelProperties.outline = false;
-			labelProperties.fill = true;
+			const class PoiLabel &label = *groupLabels[i];
 
-			labelProperties.lineWidth=haloWidth;
-
-			//Get bounds
-			std::vector<TwistedCurveCmd> path;
-			FixBezierToPoints(label.shape, path);
-			TwistedTextLabel outLabel(outString, path);
-			TwistedTriangles bounds;
-			double pathLen = -1.0, textLen = -1.0;
-			if(this->output != NULL)
+			//Extract final draw parameters from tags and style
+			const std::string &textName = label.textName;
+			std::string outString;
+			if(textName[0] == '[' && textName[textName.size()-1] == ']') 
 			{
-				this->output->GetTriangleBoundsTwistedText(outLabel, labelProperties, 
-					bounds, pathLen, textLen);
+				std::string keyName(&textName[1], textName.size()-2);
+				TagMap::const_iterator it = label.tags.find(keyName);
+				if(it == label.tags.end()) continue;
+				outString = it->second;
 			}
+			else
+				outString = textName;
 
-			//Don't draw if string is too long for path
-			if(pathLen >= 0.0 && textLen >= 0.0 && textLen > pathLen)
-				continue;
+			int textSize = 9;
+			StyleAttributes::const_iterator paramIt = label.styleAttributes.find("text-size");
+			if(paramIt != label.styleAttributes.end())
+				textSize = atoi(paramIt->second.c_str());
+
+			double fillR=1.0, fillG=1.0, fillB=1.0, fillA = 1.0;
+			paramIt = label.styleAttributes.find("text-fill");
+			if(paramIt != label.styleAttributes.end())
+				ColourStringToRgba(paramIt->second.c_str(), fillR, fillG, fillB, fillA);
+
+			double haloR=0.0, haloG=0.0, haloB=0.0, haloA=0.0;
+			paramIt = label.styleAttributes.find("text-halo-fill");
+			if(paramIt != label.styleAttributes.end())
+				ColourStringToRgba(paramIt->second.c_str(), haloR, haloG, haloB, haloA);
+
+			double haloWidth=2.0;
+			paramIt = label.styleAttributes.find("text-halo-radius");
+			if(paramIt != label.styleAttributes.end())
+				haloWidth = atof(paramIt->second.c_str());
+
+			std::string placement = "point";
+			paramIt = label.styleAttributes.find("text-placement");
+			if(paramIt != label.styleAttributes.end())
+				placement = paramIt->second;
+
+			//A shape is required for any drawing to happen
+			if(label.shape.size() == 0) continue;
+
+			if(placement == "point")
+			{
+				//Define draw styles
+				class TextProperties labelProperties(fillR, fillG, fillB);
+				labelProperties.fontSize = textSize;
+				labelProperties.halign = 0.5;
+				labelProperties.fa = fillA;
+				labelProperties.lr = haloR;
+				labelProperties.lg = haloG;
+				labelProperties.lb = haloB;
+				labelProperties.la = haloA;
+				if(haloA > 0.0)
+					labelProperties.outline = true;
+				else 
+					labelProperties.outline = false;
+				labelProperties.fill = true;
+				labelProperties.lineWidth=haloWidth;
+
+				//Get bounds
+				double lx = label.shape[0].first;
+				double ly = label.shape[0].second;
+				TextLabel outLabel(outString, lx, ly);
+				TwistedTriangles bounds;
+				if(this->output != NULL)
+				{
+					this->output->GetTriangleBoundsText(outLabel, labelProperties, 
+						bounds);
+				}
 	
-			std::vector<class TwistedTextLabel> textStrs;
-			textStrs.push_back(outLabel);
+				std::vector<class TextLabel> textStrs;
+				textStrs.push_back(outLabel);
 
-			class LabelBounds labelBounds(bounds);
+				class LabelBounds labelBounds(bounds);
 
-			//Add label definition to list
-			LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
-			if(it == organisedLabelsOut.end())
-				organisedLabelsOut[importance] = vector<class LabelDef>();
-			organisedLabelsOut[importance].push_back(LabelDef(labelBounds, labelProperties, textStrs));
+				//Add label definition to list
+				LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
+				if(it == organisedLabelsOut.end())
+					organisedLabelsOut[importance] = vector<class LabelDef>();
+				organisedLabelsOut[importance].push_back(LabelDef(labelBounds, labelProperties, textStrs));
+			}
+		
+			if(placement == "line")
+			{
+				//Define draw styles
+				class TextProperties labelProperties(fillR, fillG, fillB);
+				labelProperties.fontSize = textSize;
+				labelProperties.valign = 0.7;
+				labelProperties.fa = fillA;
+				labelProperties.lr = haloR;
+				labelProperties.lg = haloG;
+				labelProperties.lb = haloB;
+				labelProperties.la = haloA;
+				if(haloA > 0.0)
+					labelProperties.outline = true;
+				else 
+					labelProperties.outline = false;
+				labelProperties.fill = true;
+
+				labelProperties.lineWidth=haloWidth;
+
+				//Get bounds
+				std::vector<TwistedCurveCmd> path;
+				FixBezierToPoints(label.shape, path);
+				TwistedTextLabel outLabel(outString, path);
+				TwistedTriangles bounds;
+				double pathLen = -1.0, textLen = -1.0;
+				if(this->output != NULL)
+				{
+					this->output->GetTriangleBoundsTwistedText(outLabel, labelProperties, 
+						bounds, pathLen, textLen);
+				}
+
+				//Don't draw if string is too long for path
+				if(pathLen >= 0.0 && textLen >= 0.0 && textLen > pathLen)
+					continue;
+	
+				std::vector<class TwistedTextLabel> textStrs;
+				textStrs.push_back(outLabel);
+
+				class LabelBounds labelBounds(bounds);
+
+				//Add label definition to list
+				LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
+				if(it == organisedLabelsOut.end())
+					organisedLabelsOut[importance] = vector<class LabelDef>();
+				organisedLabelsOut[importance].push_back(LabelDef(labelBounds, labelProperties, textStrs));
+			}
 		}
 	}
 }
