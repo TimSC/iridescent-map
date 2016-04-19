@@ -6,6 +6,10 @@
 #include "drawlib/RdpSimplify.h"
 using namespace std;
 
+bool LabelOverlaps(const class LabelBounds &labelBounds, const LabelsByImportance &existingLabels);
+
+// *************************************
+
 LabelDef::LabelDef(const class LabelBounds &labelBounds,
 		const class TextProperties &properties,
 		const std::vector<class TextLabel> &labels) : labelBounds(labelBounds),
@@ -286,10 +290,9 @@ void LabelEngine::LabelPoisToStyledLabel(const std::vector<class PoiLabel> &poiL
 	}
 
 	//Created styled labels in importance order, check for collisions and try to fit in available space
-	for(map<int, vector<const class PoiLabel *> >::iterator it = sortedByImportance.begin();
-		it != sortedByImportance.end(); it++)
+	for(map<int, vector<const class PoiLabel *> >::reverse_iterator it = sortedByImportance.rbegin();
+		it != sortedByImportance.rend(); it++)
 	{
-		cout << it->first << endl;
 		int importance = it->first ;
 		vector<const class PoiLabel *> &groupLabels = it->second;
 
@@ -372,6 +375,9 @@ void LabelEngine::LabelPoisToStyledLabel(const std::vector<class PoiLabel> &poiL
 
 				class LabelBounds labelBounds(bounds);
 
+				//Check label does not collide with any existing labels
+				if (LabelOverlaps(labelBounds, organisedLabelsOut)) continue;
+
 				//Add label definition to list
 				LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
 				if(it == organisedLabelsOut.end())
@@ -419,6 +425,9 @@ void LabelEngine::LabelPoisToStyledLabel(const std::vector<class PoiLabel> &poiL
 
 				class LabelBounds labelBounds(bounds);
 
+				//Check label does not collide with any existing labels
+				if (LabelOverlaps(labelBounds, organisedLabelsOut)) continue;
+
 				//Add label definition to list
 				LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
 				if(it == organisedLabelsOut.end())
@@ -429,14 +438,14 @@ void LabelEngine::LabelPoisToStyledLabel(const std::vector<class PoiLabel> &poiL
 	}
 }
 
-bool LabelOverlaps(const class LabelDef &label, const LabelsByImportance existingLabels)
+bool LabelOverlaps(const class LabelBounds &labelBounds, const LabelsByImportance &existingLabels)
 {
 	for(LabelsByImportance::const_iterator itr = existingLabels.begin(); itr != existingLabels.end(); itr++)
 	{
 		const vector<class LabelDef> &lbs = itr->second;
 		for(size_t j=0; j<lbs.size(); j++)
 		{
-			if(label.labelBounds.Overlaps(lbs[j].labelBounds))
+			if(labelBounds.Overlaps(lbs[j].labelBounds))
 				return true;
 		}
 	}
@@ -448,21 +457,14 @@ void LabelEngine::RemoveOverlapping(const LabelsByImportance &organisedLabelsTmp
 	organisedLabelsOut.clear();
 	
 	//Starting with high imporance labels, check for overlaps
-	if(organisedLabelsTmp.size() == 0)
-		return;
-	LabelsByImportance::const_iterator itr = organisedLabelsTmp.end();
-	itr --;
-	bool looping = true;
-	while(looping)
+	for(LabelsByImportance::const_reverse_iterator itr = organisedLabelsTmp.rbegin(); itr != organisedLabelsTmp.rend(); itr++)
 	{
-		if(itr == organisedLabelsTmp.begin())
-			looping = false;
 		int importance = itr->first;
 		const vector<class LabelDef> &lbs = itr->second;
 		for(size_t j=0; j<lbs.size(); j++)
 		{
 			const class LabelDef &label = lbs[j];
-			bool overlaps = LabelOverlaps(label, organisedLabelsOut);
+			bool overlaps = LabelOverlaps(label.labelBounds, organisedLabelsOut);
 			if(!overlaps)
 			{
 				LabelsByImportance::iterator chkIt = organisedLabelsOut.find(importance);
@@ -471,8 +473,6 @@ void LabelEngine::RemoveOverlapping(const LabelsByImportance &organisedLabelsTmp
 				organisedLabelsOut[importance].push_back(label);
 			}
 		}
-		if(looping)
-			itr --;
 	}
 }
 
