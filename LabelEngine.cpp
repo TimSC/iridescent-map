@@ -523,7 +523,27 @@ void LabelEngine::RemoveOverlapping(const LabelsByImportance &organisedLabelsTmp
 
 void LabelEngine::WriteDrawCommands(const LabelsByImportance &organisedLabels)
 {
+	//Load resources
+	std::map<std::string, std::string> loadIdToFilenameMapping;
+	std::vector<std::string> emptyUnloadIds;
+	for(LabelsByImportance::const_iterator itr = organisedLabels.begin(); itr != organisedLabels.end(); itr++)
+	{
+		const vector<class LabelDef> &lbs = itr->second;
+		for(size_t j=0; j<lbs.size(); j++)
+		{
+			const class LabelDef &labelDef = lbs[j];
+			for(size_t k=0; k < labelDef.icons.size(); k++)
+			{
+				const class LabelIcon &icon = labelDef.icons[k];
+				loadIdToFilenameMapping[icon.iconFile] = icon.iconFile;
+			}
+		}
+	}
 
+	this->output->AddLoadImageResourcesCmd(loadIdToFilenameMapping, 
+		emptyUnloadIds);
+
+	//Do drawing
 	for(LabelsByImportance::const_iterator itr = organisedLabels.begin(); itr != organisedLabels.end(); itr++)
 	{
 		const vector<class LabelDef> &lbs = itr->second;
@@ -549,12 +569,32 @@ void LabelEngine::WriteDrawCommands(const LabelsByImportance &organisedLabels)
 				const class LabelIcon &labelIcon = labelDef.icons[i];
 				std::vector<Polygon> iconPolys;
 				ShapeProperties iconProperties;
+				Contour iconOuter;
+				iconOuter.push_back(Point(labelIcon.x, labelIcon.y));
+				iconOuter.push_back(Point(labelIcon.x+32, labelIcon.y));
+				iconOuter.push_back(Point(labelIcon.x+32, labelIcon.y+32));
+				iconOuter.push_back(Point(labelIcon.x, labelIcon.y+32));
+				Polygon poly(iconOuter, Contours());
+				iconPolys.push_back(poly);
+
+				iconProperties.imageId=labelIcon.iconFile;
 
 				this->output->AddDrawPolygonsCmd(iconPolys, iconProperties);
 			}
 
 		}
 	}
+
+	//Release resources
+	std::map<std::string, std::string> emptyMapping;
+	std::vector<std::string> unloadIds;
+	for(std::map<std::string, std::string>::iterator it = loadIdToFilenameMapping.begin();
+		it != loadIdToFilenameMapping.end(); it++)
+	{
+		unloadIds.push_back(it->first);
+	}
+	this->output->AddLoadImageResourcesCmd(emptyMapping, 
+		unloadIds);
 }
 
 // **********************************************
