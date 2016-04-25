@@ -578,6 +578,8 @@ void LabelEngine::WriteDrawCommands(const LabelsByImportance &organisedLabels)
 				iconPolys.push_back(poly);
 
 				iconProperties.imageId=labelIcon.iconFile;
+				iconProperties.texx = -labelIcon.x;
+				iconProperties.texy = -labelIcon.y;
 
 				this->output->AddDrawPolygonsCmd(iconPolys, iconProperties);
 			}
