@@ -44,6 +44,7 @@ LabelDef& LabelDef::operator=(const LabelDef &arg)
 	properties = arg.properties;
 	labels = arg.labels;
 	twistedLabels = arg.twistedLabels;
+	icons = arg.icons;
 }
 
 void LabelDef::Translate(double tx, double ty)
@@ -58,6 +59,11 @@ void LabelDef::Translate(double tx, double ty)
 	{
 		class TwistedTextLabel &tl = twistedLabels[i];
 		tl.Translate(tx, ty);
+	}
+	for(size_t i=0; i<icons.size();i++)
+	{
+		class LabelIcon &ic = icons[i];
+		ic.Translate(tx, ty);
 	}
 }
 
@@ -221,6 +227,37 @@ void LabelBounds::Translate(double tx, double ty)
 
 // ***************************************************
 
+LabelIcon::LabelIcon()
+{
+	x = 0.0; y = 0.0;
+	iconFile = "";
+}
+
+LabelIcon::LabelIcon(const class LabelIcon &a)
+{
+	*this = a;
+}
+
+LabelIcon::~LabelIcon()
+{
+
+}
+
+LabelIcon& LabelIcon::operator=(const LabelIcon &arg)
+{
+	x=arg.x;
+	y=arg.y;
+	iconFile=arg.iconFile;
+}
+
+void LabelIcon::Translate(double tx, double ty)
+{
+	x += tx;
+	y += ty;
+}
+
+// ***************************************************
+
 PoiLabel::PoiLabel()
 {
 
@@ -359,7 +396,7 @@ void LabelEngine::LabelPoisToStyledLabel(const std::vector<class PoiLabel> &poiL
 				labelProperties.fill = true;
 				labelProperties.lineWidth=haloWidth;
 
-				//Get bounds
+				//Get bounds for text
 				double lx = label.shape[0].first;
 				double ly = label.shape[0].second;
 				TextLabel outLabel(outString, lx, ly);
@@ -372,17 +409,25 @@ void LabelEngine::LabelPoisToStyledLabel(const std::vector<class PoiLabel> &poiL
 	
 				std::vector<class TextLabel> textStrs;
 				textStrs.push_back(outLabel);
-
-				class LabelBounds labelBounds(bounds);
+				
+				//Icon bounds
+				LabelIcon labelIcon;
+				labelIcon.x = lx;
+				labelIcon.y = ly;
+				labelIcon.iconFile = "symbols/pub.png";
 
 				//Check label does not collide with any existing labels
+				class LabelBounds labelBounds(bounds);
 				if (LabelOverlaps(labelBounds, organisedLabelsOut)) continue;
+
+				LabelDef labelDef(labelBounds, labelProperties, textStrs);
+				labelDef.icons.push_back(labelIcon);
 
 				//Add label definition to list
 				LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
 				if(it == organisedLabelsOut.end())
 					organisedLabelsOut[importance] = vector<class LabelDef>();
-				organisedLabelsOut[importance].push_back(LabelDef(labelBounds, labelProperties, textStrs));
+				organisedLabelsOut[importance].push_back(labelDef);
 			}
 		
 			if(placement == "line")
@@ -486,17 +531,26 @@ void LabelEngine::WriteDrawCommands(const LabelsByImportance &organisedLabels)
 		{
 			const class LabelDef &labelDef = lbs[j];
 
+			if(this->output == NULL) continue;
+
 			if(labelDef.labels.size() > 0)
 			{
 				//Foreground text
-				if(this->output != NULL)
-					this->output->AddDrawTextCmd(labelDef.labels, labelDef.properties);
+				this->output->AddDrawTextCmd(labelDef.labels, labelDef.properties);
 			}
 
 			if(labelDef.twistedLabels.size() > 0)
 			{
-				if(this->output != NULL)
-					this->output->AddDrawTwistedTextCmd(labelDef.twistedLabels, labelDef.properties);
+				this->output->AddDrawTwistedTextCmd(labelDef.twistedLabels, labelDef.properties);
+			}
+
+			for(size_t i =0; i < labelDef.icons.size(); i++) 
+			{
+				const class LabelIcon &labelIcon = labelDef.icons[i];
+				std::vector<Polygon> iconPolys;
+				ShapeProperties iconProperties;
+
+				this->output->AddDrawPolygonsCmd(iconPolys, iconProperties);
 			}
 
 		}

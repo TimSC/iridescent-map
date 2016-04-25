@@ -23,6 +23,20 @@ public:
 	void Translate(double tx, double ty);
 };
 
+class LabelIcon
+{
+public:
+	double x, y;
+	std::string iconFile;
+
+	LabelIcon();
+	LabelIcon(const class LabelIcon &a);
+	virtual ~LabelIcon();
+	LabelIcon& operator=(const LabelIcon &arg);
+
+	void Translate(double tx, double ty);
+};
+
 ///A label/icon group with low level drawing API information, with bounding info.
 class LabelDef
 {
@@ -31,6 +45,7 @@ public:
 	class TextProperties properties;
 	std::vector<class TextLabel> labels;
 	std::vector<class TwistedTextLabel> twistedLabels;
+	std::vector<class LabelIcon> icons;
 
 	LabelDef(const class LabelBounds &labelBounds,
 		const class TextProperties &properties,
