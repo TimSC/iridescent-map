@@ -47,6 +47,7 @@ public:
 	std::vector<class TwistedTextLabel> twistedLabels;
 	std::vector<class LabelIcon> icons;
 
+	LabelDef();
 	LabelDef(const class LabelBounds &labelBounds,
 		const class TextProperties &properties,
 		const std::vector<class TextLabel> &labels);
@@ -85,6 +86,15 @@ class LabelEngine
 {
 protected:
 	class IDrawLib *output; //Borrowed reference
+	std::string outString;
+	int textSize;
+	double fillR, fillG, fillB, fillA;
+	double haloR, haloG, haloB, haloA;
+	double haloWidth;
+	std::string placement;
+	std::string markerFile;
+
+	bool LayoutIconAndText(const class PoiLabel &label, bool enableIcon, bool enableText, LabelsByImportance &organisedLabelsOut, LabelDef &labelDefOut);
 
 public:
 	LabelEngine(class IDrawLib *output);

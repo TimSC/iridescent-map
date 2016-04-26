@@ -10,6 +10,11 @@ bool LabelOverlaps(const class LabelBounds &labelBounds, const LabelsByImportanc
 
 // *************************************
 
+LabelDef::LabelDef()
+{
+
+}
+
 LabelDef::LabelDef(const class LabelBounds &labelBounds,
 		const class TextProperties &properties,
 		const std::vector<class TextLabel> &labels) : labelBounds(labelBounds),
@@ -301,12 +306,91 @@ PoiLabel& PoiLabel::operator=(const PoiLabel &arg)
 LabelEngine::LabelEngine(class IDrawLib *output):
 	output(output)
 {
-
+	outString = "";
+	textSize = 9;
+	fillR=1.0; fillG=1.0; fillB=1.0; fillA = 1.0;
+	haloR=0.0; haloG=0.0; haloB=0.0; haloA=0.0;
+	haloWidth=2.0;
+	placement = "point";
+	markerFile = "";
 }
 
 LabelEngine::~LabelEngine()
 {
 
+}
+
+bool LabelEngine::LayoutIconAndText(const class PoiLabel &label, bool enableIcon, bool enableText, LabelsByImportance &organisedLabelsOut, LabelDef &labelDefOut)
+{
+	unsigned resWidth=0, resHeight=0;
+	if(this->markerFile.size() > 0 && enableIcon)
+		this->output->GetResourceDimensionsFromFilename(this->markerFile, resWidth, resHeight);
+
+	TwistedTriangles bounds;
+	std::vector<class TextLabel> textStrs;
+	class TextProperties labelProperties(fillR, fillG, fillB);
+	if(enableText)
+	{
+		//Define draw styles
+		labelProperties.fontSize = textSize;
+		labelProperties.halign = 0.5;
+		labelProperties.fa = fillA;
+		labelProperties.lr = haloR;
+		labelProperties.lg = haloG;
+		labelProperties.lb = haloB;
+		labelProperties.la = haloA;
+		if(haloA > 0.0)
+			labelProperties.outline = true;
+		else 
+			labelProperties.outline = false;
+		labelProperties.fill = true;
+		labelProperties.lineWidth=haloWidth;
+
+		//Get bounds for text
+		double lx = label.shape[0].first;
+		double ly = label.shape[0].second;
+		//if(this->markerFile.size() > 0 && enableIcon)
+		//	ly -= resHeight / 2.0;
+		TextLabel outLabel(outString, lx, ly + resHeight / 2.0);
+		if(this->output != NULL)
+		{
+			this->output->GetTriangleBoundsText(outLabel, labelProperties, 
+				bounds);
+		}
+
+		textStrs.push_back(outLabel);
+	}
+	
+	//Icon bounds
+	LabelIcon labelIcon;
+	if(this->markerFile.size() > 0 && enableIcon)
+	{
+		double lx = label.shape[0].first;
+		double ly = label.shape[0].second;
+		labelIcon.x = lx - resWidth / 2.0;
+		labelIcon.y = ly - resHeight / 2.0;
+		labelIcon.iconFile = markerFile;
+		std::vector<Point> iconTri1;
+		iconTri1.push_back(Point(labelIcon.x, labelIcon.y));
+		iconTri1.push_back(Point(labelIcon.x+resWidth, labelIcon.y));
+		iconTri1.push_back(Point(labelIcon.x+resWidth, labelIcon.y+resHeight));
+		bounds.push_back(iconTri1);
+		std::vector<Point> iconTri2;
+		iconTri2.push_back(Point(labelIcon.x, labelIcon.y));
+		iconTri2.push_back(Point(labelIcon.x+resWidth, labelIcon.y+resHeight));
+		iconTri2.push_back(Point(labelIcon.x, labelIcon.y+resHeight));
+		bounds.push_back(iconTri2);
+	}
+
+	//Check label does not collide with any existing labels
+	class LabelBounds labelBounds(bounds);
+	if (LabelOverlaps(labelBounds, organisedLabelsOut)) return false;
+
+	LabelDef labelDef(labelBounds, labelProperties, textStrs);
+	if(this->markerFile.size() > 0 && enableIcon)
+		labelDef.icons.push_back(labelIcon);
+	labelDefOut = labelDef;
+	return true;
 }
 
 void LabelEngine::LabelPoisToStyledLabel(const std::vector<class PoiLabel> &poiLabels, LabelsByImportance &organisedLabelsOut)
@@ -348,113 +432,59 @@ void LabelEngine::LabelPoisToStyledLabel(const std::vector<class PoiLabel> &poiL
 
 			//Extract final draw parameters from tags and style
 			const std::string &textName = label.textName;
-			std::string outString;
+			this->outString = "";
 			if(textName[0] == '[' && textName[textName.size()-1] == ']') 
 			{
 				std::string keyName(&textName[1], textName.size()-2);
 				TagMap::const_iterator it = label.tags.find(keyName);
 				if(it == label.tags.end()) continue;
-				outString = it->second;
+				this->outString = it->second;
 			}
 			else
-				outString = textName;
+				this->outString = textName;
 
-			int textSize = 9;
+			this->textSize = 9;
 			StyleAttributes::const_iterator paramIt = label.styleAttributes.find("text-size");
 			if(paramIt != label.styleAttributes.end())
-				textSize = atoi(paramIt->second.c_str());
+				this->textSize = atoi(paramIt->second.c_str());
 
-			double fillR=1.0, fillG=1.0, fillB=1.0, fillA = 1.0;
+			this->fillR=1.0; this->fillG=1.0; this->fillB=1.0; this->fillA = 1.0;
 			paramIt = label.styleAttributes.find("text-fill");
 			if(paramIt != label.styleAttributes.end())
-				ColourStringToRgba(paramIt->second.c_str(), fillR, fillG, fillB, fillA);
+				ColourStringToRgba(paramIt->second.c_str(), this->fillR, this->fillG, this->fillB, this->fillA);
 
-			double haloR=0.0, haloG=0.0, haloB=0.0, haloA=0.0;
+			this->haloR=0.0; this->haloG=0.0; this->haloB=0.0; this->haloA=0.0;
 			paramIt = label.styleAttributes.find("text-halo-fill");
 			if(paramIt != label.styleAttributes.end())
-				ColourStringToRgba(paramIt->second.c_str(), haloR, haloG, haloB, haloA);
+				ColourStringToRgba(paramIt->second.c_str(), this->haloR, this->haloG, this->haloB, this->haloA);
 
-			double haloWidth=2.0;
+			this->haloWidth=2.0;
 			paramIt = label.styleAttributes.find("text-halo-radius");
 			if(paramIt != label.styleAttributes.end())
-				haloWidth = atof(paramIt->second.c_str());
+				this->haloWidth = atof(paramIt->second.c_str());
 
-			std::string placement = "point";
+			this->placement = "point";
 			paramIt = label.styleAttributes.find("text-placement");
 			if(paramIt != label.styleAttributes.end())
-				placement = paramIt->second;
+				this->placement = paramIt->second;
 
-			std::string markerFile = "";
+			this->markerFile = "";
 			paramIt = label.styleAttributes.find("marker-file");
 			if(paramIt != label.styleAttributes.end())
-				UrlToLocalFile(paramIt->second, markerFile);
+				UrlToLocalFile(paramIt->second, this->markerFile);
 
 			//A shape is required for any drawing to happen
 			if(label.shape.size() == 0) continue;
 
 			if(placement == "point")
 			{
-				unsigned resWidth=0, resHeight=0;
-				if(markerFile.size() > 0)
-					this->output->GetResourceDimensionsFromFilename(markerFile, resWidth, resHeight);
+				//Try layouts with and without icon and text to make it visible
+				LabelDef labelDef;
+				bool labelOk = LayoutIconAndText(label, true, true, organisedLabelsOut, labelDef);
+				if(!labelOk) labelOk = LayoutIconAndText(label, false, true, organisedLabelsOut, labelDef);
+				if(!labelOk) labelOk = LayoutIconAndText(label, true, false, organisedLabelsOut, labelDef);
+				if(!labelOk) continue;	
 
-				//Define draw styles
-				class TextProperties labelProperties(fillR, fillG, fillB);
-				labelProperties.fontSize = textSize;
-				labelProperties.halign = 0.5;
-				labelProperties.fa = fillA;
-				labelProperties.lr = haloR;
-				labelProperties.lg = haloG;
-				labelProperties.lb = haloB;
-				labelProperties.la = haloA;
-				if(haloA > 0.0)
-					labelProperties.outline = true;
-				else 
-					labelProperties.outline = false;
-				labelProperties.fill = true;
-				labelProperties.lineWidth=haloWidth;
-
-				//Get bounds for text
-				double lx = label.shape[0].first;
-				double ly = label.shape[0].second;
-				TextLabel outLabel(outString, lx, ly+resHeight / 2.0);
-				TwistedTriangles bounds;
-				if(this->output != NULL)
-				{
-					this->output->GetTriangleBoundsText(outLabel, labelProperties, 
-						bounds);
-				}
-	
-				std::vector<class TextLabel> textStrs;
-				textStrs.push_back(outLabel);
-				
-				//Icon bounds
-				LabelIcon labelIcon;
-				if(markerFile.size() > 0)
-				{
-					labelIcon.x = lx - resWidth / 2.0;
-					labelIcon.y = ly - resHeight / 2.0;
-					labelIcon.iconFile = markerFile;
-					std::vector<Point> iconTri1;
-					iconTri1.push_back(Point(labelIcon.x, labelIcon.y));
-					iconTri1.push_back(Point(labelIcon.x+resWidth, labelIcon.y));
-					iconTri1.push_back(Point(labelIcon.x+resWidth, labelIcon.y+resHeight));
-					bounds.push_back(iconTri1);
-					std::vector<Point> iconTri2;
-					iconTri2.push_back(Point(labelIcon.x, labelIcon.y));
-					iconTri2.push_back(Point(labelIcon.x+resWidth, labelIcon.y+resHeight));
-					iconTri2.push_back(Point(labelIcon.x, labelIcon.y+resHeight));
-					bounds.push_back(iconTri2);
-				}
-
-				//Check label does not collide with any existing labels
-				class LabelBounds labelBounds(bounds);
-				if (LabelOverlaps(labelBounds, organisedLabelsOut)) continue;
-
-				LabelDef labelDef(labelBounds, labelProperties, textStrs);
-				if(markerFile.size() > 0)
-					labelDef.icons.push_back(labelIcon);
-	
 				//Add label definition to list
 				LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
 				if(it == organisedLabelsOut.end())
