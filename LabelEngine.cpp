@@ -380,6 +380,10 @@ void LabelEngine::LabelPoisToStyledLabel(const std::vector<class PoiLabel> &poiL
 
 			if(placement == "point")
 			{
+				string iconFile = "symbols/pub.png";
+				unsigned resWidth=0, resHeight=0;
+				this->output->GetResourceDimensionsFromFilename(iconFile, resWidth, resHeight);
+
 				//Define draw styles
 				class TextProperties labelProperties(fillR, fillG, fillB);
 				labelProperties.fontSize = textSize;
@@ -399,7 +403,7 @@ void LabelEngine::LabelPoisToStyledLabel(const std::vector<class PoiLabel> &poiL
 				//Get bounds for text
 				double lx = label.shape[0].first;
 				double ly = label.shape[0].second;
-				TextLabel outLabel(outString, lx, ly);
+				TextLabel outLabel(outString, lx, ly+resHeight / 2.0);
 				TwistedTriangles bounds;
 				if(this->output != NULL)
 				{
@@ -412,9 +416,19 @@ void LabelEngine::LabelPoisToStyledLabel(const std::vector<class PoiLabel> &poiL
 				
 				//Icon bounds
 				LabelIcon labelIcon;
-				labelIcon.x = lx;
-				labelIcon.y = ly;
-				labelIcon.iconFile = "symbols/pub.png";
+				labelIcon.x = lx - resWidth / 2.0;
+				labelIcon.y = ly - resHeight / 2.0;
+				labelIcon.iconFile = iconFile;
+				std::vector<Point> iconTri1;
+				iconTri1.push_back(Point(labelIcon.x, labelIcon.y));
+				iconTri1.push_back(Point(labelIcon.x+resWidth, labelIcon.y));
+				iconTri1.push_back(Point(labelIcon.x+resWidth, labelIcon.y+resHeight));
+				bounds.push_back(iconTri1);
+				std::vector<Point> iconTri2;
+				iconTri2.push_back(Point(labelIcon.x, labelIcon.y));
+				iconTri2.push_back(Point(labelIcon.x+resWidth, labelIcon.y+resHeight));
+				iconTri2.push_back(Point(labelIcon.x, labelIcon.y+resHeight));
+				bounds.push_back(iconTri2);
 
 				//Check label does not collide with any existing labels
 				class LabelBounds labelBounds(bounds);
