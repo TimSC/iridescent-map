@@ -238,6 +238,23 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		return 1;
 	}
 
+	it = tags.find("railway");
+	if(it != tags.end() && featuretype == Line)
+	{
+		if(it->second == "rail")
+		{
+			StyleAttributes  style;
+			LayerDef layerDef;
+			style["line-color"] = "#555";
+			style["line-width"] = "3";
+			layerDef.push_back(1);
+			layerDef.push_back(1);
+			styleDefOut.push_back(StyleAndLayerDef(layerDef, style));
+			return 1;
+		}
+
+	}
+
 	return 0;
 
 }
