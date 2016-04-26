@@ -118,6 +118,15 @@ void ValidateTriangles(const TwistedTriangles &bounds)
 	}
 }
 
+void UrlToLocalFile(const string &inStr, string &outStr)
+{
+	//Input in the form url('symbols/pub.png')
+	if(inStr.substr(0, 5) == "url('")
+	{
+		outStr = inStr.substr(5, inStr.size()-7);
+	}
+}
+
 // **********************************************
 
 LabelBounds::LabelBounds()
@@ -375,14 +384,19 @@ void LabelEngine::LabelPoisToStyledLabel(const std::vector<class PoiLabel> &poiL
 			if(paramIt != label.styleAttributes.end())
 				placement = paramIt->second;
 
+			std::string markerFile = "";
+			paramIt = label.styleAttributes.find("marker-file");
+			if(paramIt != label.styleAttributes.end())
+				UrlToLocalFile(paramIt->second, markerFile);
+
 			//A shape is required for any drawing to happen
 			if(label.shape.size() == 0) continue;
 
 			if(placement == "point")
 			{
-				string iconFile = "symbols/pub.png";
 				unsigned resWidth=0, resHeight=0;
-				this->output->GetResourceDimensionsFromFilename(iconFile, resWidth, resHeight);
+				if(markerFile.size() > 0)
+					this->output->GetResourceDimensionsFromFilename(markerFile, resWidth, resHeight);
 
 				//Define draw styles
 				class TextProperties labelProperties(fillR, fillG, fillB);
@@ -416,27 +430,31 @@ void LabelEngine::LabelPoisToStyledLabel(const std::vector<class PoiLabel> &poiL
 				
 				//Icon bounds
 				LabelIcon labelIcon;
-				labelIcon.x = lx - resWidth / 2.0;
-				labelIcon.y = ly - resHeight / 2.0;
-				labelIcon.iconFile = iconFile;
-				std::vector<Point> iconTri1;
-				iconTri1.push_back(Point(labelIcon.x, labelIcon.y));
-				iconTri1.push_back(Point(labelIcon.x+resWidth, labelIcon.y));
-				iconTri1.push_back(Point(labelIcon.x+resWidth, labelIcon.y+resHeight));
-				bounds.push_back(iconTri1);
-				std::vector<Point> iconTri2;
-				iconTri2.push_back(Point(labelIcon.x, labelIcon.y));
-				iconTri2.push_back(Point(labelIcon.x+resWidth, labelIcon.y+resHeight));
-				iconTri2.push_back(Point(labelIcon.x, labelIcon.y+resHeight));
-				bounds.push_back(iconTri2);
+				if(markerFile.size() > 0)
+				{
+					labelIcon.x = lx - resWidth / 2.0;
+					labelIcon.y = ly - resHeight / 2.0;
+					labelIcon.iconFile = markerFile;
+					std::vector<Point> iconTri1;
+					iconTri1.push_back(Point(labelIcon.x, labelIcon.y));
+					iconTri1.push_back(Point(labelIcon.x+resWidth, labelIcon.y));
+					iconTri1.push_back(Point(labelIcon.x+resWidth, labelIcon.y+resHeight));
+					bounds.push_back(iconTri1);
+					std::vector<Point> iconTri2;
+					iconTri2.push_back(Point(labelIcon.x, labelIcon.y));
+					iconTri2.push_back(Point(labelIcon.x+resWidth, labelIcon.y+resHeight));
+					iconTri2.push_back(Point(labelIcon.x, labelIcon.y+resHeight));
+					bounds.push_back(iconTri2);
+				}
 
 				//Check label does not collide with any existing labels
 				class LabelBounds labelBounds(bounds);
 				if (LabelOverlaps(labelBounds, organisedLabelsOut)) continue;
 
 				LabelDef labelDef(labelBounds, labelProperties, textStrs);
-				labelDef.icons.push_back(labelIcon);
-
+				if(markerFile.size() > 0)
+					labelDef.icons.push_back(labelIcon);
+	
 				//Add label definition to list
 				LabelsByImportance::iterator it = organisedLabelsOut.find(importance);
 				if(it == organisedLabelsOut.end())

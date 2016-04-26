@@ -207,7 +207,8 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		style["text-name"] = "[name]";
 		style["text-size"] = "9";
 		style["text-importance"] = "-1";
-		style["text-halo-fill"] = "#0008";
+		style["text-fill"] = "#734a08";
+		style["text-halo-fill"] = "#fff8";
 		style["marker-file"] = "url('symbols/pub.png')";
 		style["marker-fill"] = "#734a08";
 
