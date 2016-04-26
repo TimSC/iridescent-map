@@ -320,12 +320,27 @@ LabelEngine::~LabelEngine()
 
 }
 
+void LabelEngine::GetResourceSizeCached(const std::string &filename, unsigned &widthOut, unsigned &heightOut)
+{
+	ResourceSizeCache::iterator it = this->resourceSizeCache.find(filename);
+	if(it == resourceSizeCache.end())
+	{
+		this->output->GetResourceDimensionsFromFilename(filename, widthOut, heightOut);
+		this->resourceSizeCache[filename] = std::pair<unsigned, unsigned>(widthOut, heightOut);
+	}
+	else
+	{
+		const std::pair<unsigned, unsigned> &resSize = it->second;
+		widthOut = resSize.first;
+		heightOut = resSize.second;
+	}
+}
+
 bool LabelEngine::LayoutIconAndText(const class PoiLabel &label, bool enableIcon, bool enableText, LabelsByImportance &organisedLabelsOut, LabelDef &labelDefOut)
 {
 	unsigned resWidth=0, resHeight=0;
 	if(this->markerFile.size() > 0 && enableIcon)
-		this->output->GetResourceDimensionsFromFilename(this->markerFile, resWidth, resHeight);
-
+		this->GetResourceSizeCached(this->markerFile, resWidth, resHeight);
 	TwistedTriangles bounds;
 	std::vector<class TextLabel> textStrs;
 	class TextProperties labelProperties(fillR, fillG, fillB);
@@ -629,7 +644,7 @@ void LabelEngine::WriteDrawCommands(const LabelsByImportance &organisedLabels)
 				const class LabelIcon &labelIcon = labelDef.icons[i];
 	
 				unsigned resWidth=0, resHeight=0;
-				this->output->GetResourceDimensionsFromFilename(labelIcon.iconFile, resWidth, resHeight);
+				this->GetResourceSizeCached(labelIcon.iconFile, resWidth, resHeight);
 
 				std::vector<Polygon> iconPolys;
 				ShapeProperties iconProperties;

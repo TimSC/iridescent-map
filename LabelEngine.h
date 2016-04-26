@@ -5,6 +5,8 @@
 #include "cppo5m/o5m.h"
 #include "Style.h"
 
+typedef std::map<std::string, std::pair<unsigned, unsigned> > ResourceSizeCache;
+
 class LabelBounds
 {
 protected:
@@ -93,8 +95,10 @@ protected:
 	double haloWidth;
 	std::string placement;
 	std::string markerFile;
+	ResourceSizeCache resourceSizeCache;
 
 	bool LayoutIconAndText(const class PoiLabel &label, bool enableIcon, bool enableText, LabelsByImportance &organisedLabelsOut, LabelDef &labelDefOut);
+	void GetResourceSizeCached(const std::string &filename, unsigned &widthOut, unsigned &heightOut);
 
 public:
 	LabelEngine(class IDrawLib *output);
