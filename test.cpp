@@ -16,6 +16,8 @@ typedef map<int, map<int, LabelsByImportance> > OrganisedLabelsMap;
 int main()
 {
 
+	CoastMap coastMap("fosm-coast-earth201507161012.bin", 12);
+
 	// ** Collect labels from off screen tiles
 	OrganisedLabelsMap organisedLabelsMap;
 	cairo_surface_t *offScreenSurface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 640, 640);
@@ -30,6 +32,7 @@ int main()
 
 			class DrawLibCairoPango drawlib(offScreenSurface);	
 			class MapRender mapRender(&drawlib);
+			mapRender.SetCoastMap(coastMap);
 			LabelsByImportance organisedLabels;
 			
 			mapRender.Render(12, featureStore, false, true, slippyTilesTransform, organisedLabels);
@@ -54,6 +57,7 @@ int main()
 
 	class DrawLibCairoPango drawlib(surface);	
 	class MapRender mapRender(&drawlib);
+	mapRender.SetCoastMap(coastMap);
 	LabelsByImportance organisedLabels;
 	
 	mapRender.Render(12, featureStore, true, true, slippyTilesTransform, organisedLabels);

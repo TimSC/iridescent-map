@@ -713,7 +713,7 @@ void FeaturesToLandPolys::Draw(class IDrawLib *output)
 
 MapRender::MapRender(class IDrawLib *output) : output(output)
 {
-
+	coastMap = NULL;
 }
 
 MapRender::~MapRender()
@@ -796,4 +796,8 @@ void MapRender::RenderLabels(const RenderLabelList &labelList,
 	this->output->Draw();
 }
 
+void MapRender::SetCoastMap(CoastMap &coastMap)
+{
+	this->coastMap = &coastMap;
+}
 

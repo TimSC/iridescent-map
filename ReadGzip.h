@@ -21,6 +21,7 @@ protected:
 	std::streamsize xsgetn (char* s, std::streamsize n);
 	int uflow();
 	std::streamsize showmanyc();
+	std::streampos seekpos (std::streampos pos, std::ios_base::openmode which);
 
 public:
 	DecodeGzip(std::streambuf &inStream, std::streamsize readBuffSize = 1024*128, std::streamsize decodeBuffSize = 1024*128);

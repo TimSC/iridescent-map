@@ -4,6 +4,7 @@
 #include "MapRenderTypes.h"
 #include "Transform.h"
 #include "Style.h"
+#include "Coast.h"
 
 class DrawTreeNode
 {
@@ -27,6 +28,7 @@ class MapRender
 public:
 	class IDrawLib *output;
 	class Style style;
+	CoastMap *coastMap; //Borrowed reference
 
 	MapRender(class IDrawLib *output);
 	virtual ~MapRender();
@@ -39,6 +41,8 @@ public:
 	///This renders labels on to a drawing surface for a tile based on its own labels and the labels of surrounding tiles.
 	void RenderLabels(const RenderLabelList &labelList,
 		const RenderLabelListOffsets &labelOffsets);
+
+	void SetCoastMap(CoastMap &coastMap);
 };
 
 #endif //_MAP_RENDER_H

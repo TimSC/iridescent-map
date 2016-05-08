@@ -111,8 +111,11 @@ streamsize DecodeGzip::xsgetn (char* s, streamsize n)
 			streamsize bytesToCopy = n - outputTotal;
 			if (bytesToCopy > bytesInDecodeBuff)
 				bytesToCopy = bytesInDecodeBuff;
-			memcpy(outputBuffCursor, decodeBuffCursor, bytesToCopy);
-			outputBuffCursor += bytesToCopy;
+			if(outputBuffCursor != NULL)
+			{
+				memcpy(outputBuffCursor, decodeBuffCursor, bytesToCopy);
+				outputBuffCursor += bytesToCopy;
+			}
 			decodeBuffCursor += bytesToCopy;
 			outputTotal += bytesToCopy;
 		}
@@ -150,4 +153,7 @@ streamsize DecodeGzip::showmanyc()
 	return inStream.in_avail() > 1;
 }
 
-
+streampos DecodeGzip::seekpos (streampos pos, ios_base::openmode which = ios_base::in | ios_base::out)
+{
+	return -1;
+}
