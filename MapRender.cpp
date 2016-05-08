@@ -684,7 +684,7 @@ void FeaturesToLandPolys::Draw(class IDrawLib *output)
 		1e-6,
 		collectedLoops,
 		internalLoops,
-		reverseInternalLoops);
+		reverseInternalLoops, 0);
 
 	bool tl = false, tr = false, bl = false, br = false;
 	if(this->coastMap!=NULL)
@@ -695,8 +695,6 @@ void FeaturesToLandPolys::Draw(class IDrawLib *output)
 		bl = this->coastMap->GetVal(x, y+1);
 		br = this->coastMap->GetVal(x+1, y+1);
 	}
-	cout << tl<<tr<<bl<<br<< endl;
-	cout << collectedLoops.size() << "," << reverseInternalLoops.size() << "," << internalLoops.size() << endl;
 
 	ShapeProperties landPolyProperties(241.0/255.0, 238.0/255.0, 232.0/255.0);
 	ShapeProperties seaPolyPoperties(181.0/255.0, 208.0/255.0, 208.0/255.0);
@@ -717,6 +715,7 @@ void FeaturesToLandPolys::Draw(class IDrawLib *output)
 	//Main coast
 	std::vector<Polygon> landPolys;
 	PointInfoVecToPolygons(collectedLoops, landPolys);
+
 	output->AddDrawPolygonsCmd(landPolys, landPolyProperties);
 
 	//Small inland seas

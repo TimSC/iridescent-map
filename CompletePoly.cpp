@@ -464,62 +464,95 @@ bool SearchForConnection(int edgeIndex, double cursor, int direction,
 	return false;
 }
 
-void TraverseCorners(int prevEdgeIndex, int edgeIndex, const std::vector<double> &bbox, 
+int CheckTraverseDirection(int currentEdge, double currentPos, double edgePos)
+{
+	//Return true if edgePos is reached in a counter-clockwise rightection
+	switch(currentEdge)
+	{
+	case 0: //Left
+		return edgePos > currentPos;
+	case 1: //Bottom
+		return edgePos > currentPos;
+	case 2: //Right
+		return edgePos < currentPos;
+	case 3: //Top
+		return edgePos < currentPos;
+	}
+	throw runtime_error("Invalid edge index");
+	return 0; //Never happens
+}
+
+void TraverseCorners(int prevEdgeIndex, double prevEdgePos, 
+	int edgeIndex, double edgePos, 
+	const std::vector<double> &bbox, 
 	int direction,
-	std::vector<class PointInfo> &appendToOut)
+	std::vector<class PointInfo> &appendToOut,
+	int verbose)
 {
 	//bbox defined as left,bottom,right,top
 	if(prevEdgeIndex == -1) return;
-	if(prevEdgeIndex == edgeIndex) return;
 	int currentEdge = prevEdgeIndex;
+	double currentPos = prevEdgePos;
 
-	if(direction == -1) while(currentEdge != edgeIndex)
+	if(direction == -1) while(currentEdge != edgeIndex || CheckTraverseDirection(currentEdge, currentPos, edgePos))
 	{
+		//Clockwise
 		currentEdge --;
 		if(currentEdge < 0) currentEdge += 4;
-		//cout << "Change to edge " << currentEdge << " from " << (currentEdge+1)%4 << endl;
+		if (verbose>=1)
+			cout << "Change to edge " << currentEdge << " from " << (currentEdge+1)%4 << endl;
 		switch(currentEdge)
 		{
 		case 0:
 			//Bottom left
+			currentPos = 640.0;
 			appendToOut.push_back(PointInfo(bbox[0], bbox[1], 0, 0));
 			break;
 		case 1:
 			//Bottom right
+			currentPos = 640.0;
 			appendToOut.push_back(PointInfo(bbox[2], bbox[1], 1, 0));
 			break;
 		case 2:
 			//Top right
+			currentPos = 0.0;
 			appendToOut.push_back(PointInfo(bbox[2], bbox[3], 2, 0));
 			break;
 		case 3:
 			//Top left
+			currentPos = 0.0;
 			appendToOut.push_back(PointInfo(bbox[0], bbox[3], 3, 0));
 			break;
 		}
 	}
 
-	if(direction == 1) while(currentEdge != edgeIndex)
+	if(direction == 1) while(currentEdge != edgeIndex || !CheckTraverseDirection(currentEdge, currentPos, edgePos))
 	{
+		//Anti-clockwise
 		currentEdge ++;
 		if(currentEdge >= 4) currentEdge -= 4;
-		//cout << "Change to edge " << currentEdge << " from " << (currentEdge+1)%4 << endl;
+		if(verbose>=1)
+			cout << "Change to edge " << currentEdge << " from " << (currentEdge+1)%4 << endl;
 		switch(currentEdge)
 		{
 		case 0:
 			//Top left
+			currentPos = 0.0;
 			appendToOut.push_back(PointInfo(bbox[0], bbox[3], 3, 0));
 			break;
 		case 1:
 			//Bottom left
+			currentPos = 0.0;
 			appendToOut.push_back(PointInfo(bbox[0], bbox[1], 0, 0));
 			break;
 		case 2:
 			//Bottom right
+			currentPos = 640.0;
 			appendToOut.push_back(PointInfo(bbox[2], bbox[1], 1, 0));
 			break;
 		case 3:
 			//Top right
+			currentPos = 640.0;
 			appendToOut.push_back(PointInfo(bbox[2], bbox[3], 2, 0));
 			break;
 		}
@@ -541,7 +574,8 @@ void CompletePolygonsInBbox(const ContoursWithIds &contours,
 	double eps,
 	std::vector<std::vector<class PointInfo> > &collectedLoopsOut,
 	std::vector<std::vector<class PointInfo> > &internalLoopsOut,
-	std::vector<std::vector<class PointInfo> > &reverseInternalLoopsOut)
+	std::vector<std::vector<class PointInfo> > &reverseInternalLoopsOut, 
+	int verbose)
 {	
 	collectedLoopsOut.clear();
 	internalLoopsOut.clear();
@@ -563,7 +597,8 @@ void CompletePolygonsInBbox(const ContoursWithIds &contours,
 		pathsWithinBbox.insert(pathsWithinBbox.end(), pathsTmp.begin(), pathsTmp.end());	
 	}
 	
-	//PrintPathsWithinBbox(pathsWithinBbox);
+	if(verbose >= 2)
+		PrintPathsWithinBbox(pathsWithinBbox);
 
 	//Assign paths to edge maps
 	EdgeMap startOnEdgeMap, endOfEdgeMap;
@@ -624,12 +659,17 @@ void CompletePolygonsInBbox(const ContoursWithIds &contours,
 			std::vector<class PointInfo> &currentPath = pathsWithinBbox[currentPathIndex];
 			class PointInfo &startPt = currentPath[0];
 			class PointInfo &endPt = currentPath[currentPath.size()-1];
-			//cout << "currentPathIndex " << currentPathIndex << endl;
-			//cout << startPt.x << "," << startPt.y << "," << startPt.edgeIndex << "," << startPt.nid << endl;
-			//cout << endPt.x << "," << endPt.y << "," << endPt.edgeIndex << "," << endPt.nid << endl;
+
+			if(verbose >= 1)
+			{
+				cout << "currentPathIndex " << currentPathIndex << endl;
+				cout << startPt.x << "," << startPt.y << "," << startPt.edgeIndex << "," << startPt.nid << endl;
+				cout << endPt.x << "," << endPt.y << "," << endPt.edgeIndex << "," << endPt.nid << endl;
+			}
 			if(endPt.edgeIndex == -1)
 			{
-				//cout << "loop ended without completion" << endl;
+				if(verbose >= 1)
+					cout << "loop ended without completion" << endl;
 				//Discard these paths as just too confusing
 				for(size_t i =0;i<loopPaths.size();i++)
 					pathSentToOutput[loopPaths[i]] = true;
@@ -649,10 +689,14 @@ void CompletePolygonsInBbox(const ContoursWithIds &contours,
 			if(!found)
 			{
 				//Strange error has occurred.
-				//cout << "strange error" << endl;
+				if(verbose >= 1)
+					cout << "strange error" << endl;
 				for(size_t i =0;i<loopPaths.size();i++)
 					pathSentToOutput[loopPaths[i]] = true;
 			}
+
+			if(verbose >= 1)
+				cout << "foundPathIndex:" << foundPathIndex << endl;
 
 			bool loopComplete = false;
 			for(size_t i =0;i<loopPaths.size();i++)
@@ -666,7 +710,8 @@ void CompletePolygonsInBbox(const ContoursWithIds &contours,
 
 			if(loopComplete)
 			{
-				//cout << "loop complete" << endl;
+				if(verbose >= 1)
+					cout << "loop complete" << endl;
 				completingLoop = false;
 				for(size_t i =0;i<loopPaths.size();i++)
 					pathSentToOutput[loopPaths[i]] = true;
@@ -683,7 +728,8 @@ void CompletePolygonsInBbox(const ContoursWithIds &contours,
 	//Write loops to output with appropriate corner information
 	for(size_t i=0;i<collectedLoops.size();i++)
 	{
-		//cout << "loop: ";
+		if(verbose>=1)
+			cout << "loop: ";
 		vector<int> &loop = collectedLoops[i];
 
 		const std::vector<class PointInfo> &firstPath = pathsWithinBbox[loop[0]];
@@ -691,29 +737,51 @@ void CompletePolygonsInBbox(const ContoursWithIds &contours,
 		std::vector<class PointInfo> loopOut;
 
 		int prevEdgeIndex = -1;
+		double prevEdgePos = -1.0;
 		for(size_t j=0;j<loop.size();j++)
 		{
 			const std::vector<class PointInfo> &path = pathsWithinBbox[loop[j]];
-			//cout << "prevEdgeIndex: " << prevEdgeIndex << endl;
+			if(verbose>=1)
+				cout << "prevEdgeIndex: " << prevEdgeIndex << endl;
 			const class PointInfo &pathFirstPt = path[0];
-			TraverseCorners(prevEdgeIndex, pathFirstPt.edgeIndex, bbox, direction, loopOut);
+			double edgePos = -1.0;
+			if(pathFirstPt.edgeIndex == 0 || pathFirstPt.edgeIndex == 2)
+				edgePos = pathFirstPt.y;
+			if(pathFirstPt.edgeIndex == 1 || pathFirstPt.edgeIndex == 3)
+				edgePos = pathFirstPt.x;
 
-			//cout << loop[j] << ": ";
+			TraverseCorners(prevEdgeIndex, prevEdgePos, pathFirstPt.edgeIndex, edgePos, bbox, direction, loopOut, verbose);
+
+			if(verbose>=1)
+				cout << loop[j] << ": ";
 			for(size_t k=0; k< path.size(); k++)
 			{
 				const class PointInfo &pt = path[k];
-				//cout << pt.x << "," << pt.y << "," << pt.edgeIndex << "," << pt.nid << endl;
+				if(verbose>=1)
+					cout << pt.x << "," << pt.y << "," << pt.edgeIndex << "," << pt.nid << endl;
 				loopOut.push_back(PointInfo(pt.x, pt.y, pt.edgeIndex, pt.nid));
 				prevEdgeIndex = pt.edgeIndex;
+				if(pt.edgeIndex == 0 || pt.edgeIndex == 2)
+					prevEdgePos = pt.y;
+				if(pt.edgeIndex == 1 || pt.edgeIndex == 3)
+					prevEdgePos = pt.x;
 			}
 		}
 
-		//cout << "prevEdgeIndex: " << prevEdgeIndex << endl;
-		//cout << "first: " << firstPt.x << "," << firstPt.y << "," << firstPt.edgeIndex << "," << firstPt.nid << endl;
-		TraverseCorners(prevEdgeIndex, firstPt.edgeIndex, bbox, direction, loopOut);
+		if(verbose>=1)
+		{
+			cout << "prevEdgeIndex: " << prevEdgeIndex << endl;
+			cout << "first: " << firstPt.x << "," << firstPt.y << "," << firstPt.edgeIndex << "," << firstPt.nid << endl;
+		}
+
+		double edgePos = -1.0;
+		if(firstPt.edgeIndex == 0 || firstPt.edgeIndex == 2)
+			edgePos = firstPt.y;
+		if(firstPt.edgeIndex == 1 || firstPt.edgeIndex == 3)
+			edgePos = firstPt.x;
+		TraverseCorners(prevEdgeIndex, prevEdgePos, firstPt.edgeIndex, edgePos, bbox, direction, loopOut, verbose);
 		collectedLoopsOut.push_back(loopOut);
 	}
-
 	//Output closed loop islands
 	for(size_t i=0; i<pathsWithinBbox.size(); i++)
 	{
@@ -761,7 +829,7 @@ void TestCompletePoly()
 	line1.push_back(PointWithId(3, Point(0.5, 1.1)));
 	example1Contours.push_back(line1);
 
-	CompletePolygonsInBbox(example1Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	CompletePolygonsInBbox(example1Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops, 0);
 	PrintPathsWithinBbox(collectedLoops);
 
 	cout << "example2, land as vertical bar between vertical sea strips" << endl;
@@ -773,7 +841,7 @@ void TestCompletePoly()
 	example2Contours.push_back(line1);
 	example2Contours.push_back(line2);
 
-	CompletePolygonsInBbox(example2Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	CompletePolygonsInBbox(example2Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops, 0);
 	PrintPathsWithinBbox(collectedLoops);
 
 	cout << "example3, land in bottom right" << endl;
@@ -784,7 +852,7 @@ void TestCompletePoly()
 	line3.push_back(PointWithId(3, Point(0.5, 1.1)));
 	example3Contours.push_back(line3);
 
-	CompletePolygonsInBbox(example3Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	CompletePolygonsInBbox(example3Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops, 0);
 	PrintPathsWithinBbox(collectedLoops);
 
 	cout << "example4, sea in top right" << endl;
@@ -795,7 +863,7 @@ void TestCompletePoly()
 	line4.push_back(PointWithId(3, Point(0.5, -0.1)));
 	example4Contours.push_back(line4);
 
-	CompletePolygonsInBbox(example4Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	CompletePolygonsInBbox(example4Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops, 0);
 	PrintPathsWithinBbox(collectedLoops);
 
 	cout << "example5, land in bottom right and top left" << endl;
@@ -811,7 +879,7 @@ void TestCompletePoly()
 	line6.push_back(PointWithId(6, Point(0.4, -0.1)));
 	example5Contours.push_back(line6);
 
-	CompletePolygonsInBbox(example5Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	CompletePolygonsInBbox(example5Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops, 0);
 	PrintPathsWithinBbox(collectedLoops);
 
 	cout << "example6, sea in bottom right and top left" << endl;
@@ -827,7 +895,7 @@ void TestCompletePoly()
 	line8.push_back(PointWithId(6, Point(-0.1, 0.4)));
 	example6Contours.push_back(line8);
 
-	CompletePolygonsInBbox(example6Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	CompletePolygonsInBbox(example6Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops, 0);
 	PrintPathsWithinBbox(collectedLoops);
 
 	cout << "example7, land island" << endl;
@@ -840,7 +908,7 @@ void TestCompletePoly()
 	line9.push_back(PointWithId(1, Point(0.3, 0.3)));
 	example7Contours.push_back(line9);
 
-	CompletePolygonsInBbox(example7Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	CompletePolygonsInBbox(example7Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops, 0);
 	PrintPathsWithinBbox(collectedLoops);
 	if(direction == 1)
 	{
@@ -863,7 +931,7 @@ void TestCompletePoly()
 	line10.push_back(PointWithId(1, Point(0.3, 0.3)));
 	example8Contours.push_back(line10);
 
-	CompletePolygonsInBbox(example8Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	CompletePolygonsInBbox(example8Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops, 0);
 	assert(collectedLoops.size() == 0);
 	if(direction == 1)
 	{
@@ -891,7 +959,7 @@ void TestCompletePoly()
 	line12.push_back(PointWithId(8, Point(0.2, -0.1)));
 	example9Contours.push_back(line12);
 
-	CompletePolygonsInBbox(example9Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops);
+	CompletePolygonsInBbox(example9Contours, bbox, direction, 1e-6, collectedLoops, internalLoops, reverseInternalLoops, 0);
 	PrintPathsWithinBbox(collectedLoops);
 }
 

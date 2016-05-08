@@ -19,7 +19,8 @@ void CompletePolygonsInBbox(const ContoursWithIds &contours,
 	double eps,
 	std::vector<std::vector<class PointInfo> > &collectedLoopsOut,
 	std::vector<std::vector<class PointInfo> > &internalLoopsOut,
-	std::vector<std::vector<class PointInfo> > &reverseInternalLoopsOut);
+	std::vector<std::vector<class PointInfo> > &reverseInternalLoopsOut,
+	int verbose);
 
 void PointInfoVecToPolygons(const std::vector<std::vector<class PointInfo> > &loops, std::vector<Polygon> &out);
 
