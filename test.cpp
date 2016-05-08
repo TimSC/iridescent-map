@@ -31,7 +31,7 @@ int main()
 			class SlippyTilesTransform slippyTilesTransform(12, x, y);
 
 			class DrawLibCairoPango drawlib(offScreenSurface);	
-			class MapRender mapRender(&drawlib);
+			class MapRender mapRender(&drawlib, x, y, 12);
 			mapRender.SetCoastMap(coastMap);
 			LabelsByImportance organisedLabels;
 			
@@ -56,7 +56,7 @@ int main()
 	//class SlippyTilesTransform slippyTilesTransform(14, 8143, 5498);
 
 	class DrawLibCairoPango drawlib(surface);	
-	class MapRender mapRender(&drawlib);
+	class MapRender mapRender(&drawlib, 2035, 1374, 12);
 	mapRender.SetCoastMap(coastMap);
 	LabelsByImportance organisedLabels;
 	

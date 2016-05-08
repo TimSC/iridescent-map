@@ -29,8 +29,9 @@ public:
 	class IDrawLib *output;
 	class Style style;
 	CoastMap *coastMap; //Borrowed reference
+	int x, y, zoom;
 
-	MapRender(class IDrawLib *output);
+	MapRender(class IDrawLib *output, int x, int y, int zoom);
 	virtual ~MapRender();
 
 	///This (optionally) draws map shapes on to the drawing surface and (optionally) outputs an LabelsByImportance object.

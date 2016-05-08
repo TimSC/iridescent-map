@@ -593,9 +593,14 @@ class FeaturesToLandPolys : public IFeatureConverterResult
 {
 protected:
 	std::vector<ContourWithIds> coastlines;
+	CoastMap *coastMap; //Borrowed reference
+	int x, y, zoom;
 
 public:
-	FeaturesToLandPolys() {};
+	FeaturesToLandPolys(int x, int y, int zoom) : x(x), y(y), zoom(zoom) 
+	{
+		coastMap = NULL;
+	};
 	virtual ~FeaturesToLandPolys() {};
 	
 	void OutArea(StyleDef &styleDef, const std::vector<PolygonWithIds> &polygons, const TagMap &tags);
@@ -603,6 +608,7 @@ public:
 	void OutPoi(StyleDef &styleDef, int64_t nid, double px, double py, const TagMap &tags) {};
 
 	void Draw(class IDrawLib *output);
+	void SetCoastMap(CoastMap &coastMap);
 };
 
 void FeaturesToLandPolys::OutArea(StyleDef &styleDef, const std::vector<PolygonWithIds> &polygons, const TagMap &tags)
@@ -680,6 +686,18 @@ void FeaturesToLandPolys::Draw(class IDrawLib *output)
 		internalLoops,
 		reverseInternalLoops);
 
+	bool tl = false, tr = false, bl = false, br = false;
+	if(this->coastMap!=NULL)
+	{
+		//TODO different zooms?
+		tl = this->coastMap->GetVal(x, y);
+		tr = this->coastMap->GetVal(x+1, y);
+		bl = this->coastMap->GetVal(x, y+1);
+		br = this->coastMap->GetVal(x+1, y+1);
+	}
+	cout << tl<<tr<<bl<<br<< endl;
+	cout << collectedLoops.size() << "," << reverseInternalLoops.size() << "," << internalLoops.size() << endl;
+
 	ShapeProperties landPolyProperties(241.0/255.0, 238.0/255.0, 232.0/255.0);
 	ShapeProperties seaPolyPoperties(181.0/255.0, 208.0/255.0, 208.0/255.0);
 
@@ -691,7 +709,10 @@ void FeaturesToLandPolys::Draw(class IDrawLib *output)
 	backgroundShape.push_back(Point(x2, y2));
 	backgroundShape.push_back(Point(x2, y1));
 	backgroundPoly.push_back(Polygon(backgroundShape, Contours()));
-	output->AddDrawPolygonsCmd(backgroundPoly, seaPolyPoperties);
+	if (tl && tr && bl && br && collectedLoops.size()==0)
+		output->AddDrawPolygonsCmd(backgroundPoly, landPolyProperties);
+	else
+		output->AddDrawPolygonsCmd(backgroundPoly, seaPolyPoperties);
 
 	//Main coast
 	std::vector<Polygon> landPolys;
@@ -709,9 +730,14 @@ void FeaturesToLandPolys::Draw(class IDrawLib *output)
 	output->AddDrawPolygonsCmd(islands, landPolyProperties);
 }
 
+void FeaturesToLandPolys::SetCoastMap(CoastMap &coastMap)
+{
+	this->coastMap = &coastMap;
+}
+
 // **********************************************
 
-MapRender::MapRender(class IDrawLib *output) : output(output)
+MapRender::MapRender(class IDrawLib *output, int x, int y, int zoom) : output(output), x(x), y(y), zoom(zoom)
 {
 	coastMap = NULL;
 }
@@ -732,7 +758,8 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore,
 	class FeatureConverter featureConverter(this->output);
 
 	class FeaturesToDrawCmds featuresToDrawCmds(&drawTree);
-	class FeaturesToLandPolys featuresToLandPolys;
+	class FeaturesToLandPolys featuresToLandPolys(this->x, this->y, this->zoom);
+	featuresToLandPolys.SetCoastMap(*this->coastMap);
 	if(renderObjects)
 	{
 		featureConverter.shapesOutput.push_back(&featuresToDrawCmds);
