@@ -609,6 +609,7 @@ public:
 
 	void Draw(class IDrawLib *output);
 	void SetCoastMap(CoastMap &coastMap);
+	bool TileHasLandCorners(int zoom, int x, int y);
 };
 
 void FeaturesToLandPolys::OutArea(StyleDef &styleDef, const std::vector<PolygonWithIds> &polygons, const TagMap &tags)
@@ -656,6 +657,31 @@ void FeaturesToLandPolys::OutLine(StyleDef &styleDef, const ContoursWithIds &lin
 
 }
 
+bool FeaturesToLandPolys::TileHasLandCorners(int zoom, int x, int y)
+{
+	bool tl = false, tr = false, bl = false, br = false;
+	if(this->coastMap!=NULL)
+	{
+		//Convert request to zoom level 12
+		int reqZoom = zoom;
+		int reqx = x;
+		int reqy = y;
+
+		while(reqZoom > 12)
+		{
+			reqZoom --;
+			reqx /= 2;
+			reqy /= 2;
+		}
+
+		tl = this->coastMap->GetVal(reqx, reqy);
+		tr = this->coastMap->GetVal(reqx+1, reqy);
+		bl = this->coastMap->GetVal(reqx, reqy+1);
+		br = this->coastMap->GetVal(reqx+1, reqy+1);
+	}
+	return tl && tr && bl && br;
+}
+
 void FeaturesToLandPolys::Draw(class IDrawLib *output)
 {
 	//Merge ways into continues paths, where possible
@@ -686,15 +712,7 @@ void FeaturesToLandPolys::Draw(class IDrawLib *output)
 		internalLoops,
 		reverseInternalLoops, 0);
 
-	bool tl = false, tr = false, bl = false, br = false;
-	if(this->coastMap!=NULL)
-	{
-		//TODO different zooms?
-		tl = this->coastMap->GetVal(x, y);
-		tr = this->coastMap->GetVal(x+1, y);
-		bl = this->coastMap->GetVal(x, y+1);
-		br = this->coastMap->GetVal(x+1, y+1);
-	}
+	bool hasLandCorners = TileHasLandCorners(zoom, x, y);
 
 	ShapeProperties landPolyProperties(241.0/255.0, 238.0/255.0, 232.0/255.0);
 	ShapeProperties seaPolyPoperties(181.0/255.0, 208.0/255.0, 208.0/255.0);
@@ -707,7 +725,7 @@ void FeaturesToLandPolys::Draw(class IDrawLib *output)
 	backgroundShape.push_back(Point(x2, y2));
 	backgroundShape.push_back(Point(x2, y1));
 	backgroundPoly.push_back(Polygon(backgroundShape, Contours()));
-	if (tl && tr && bl && br && collectedLoops.size()==0)
+	if (hasLandCorners && collectedLoops.size()==0)
 		output->AddDrawPolygonsCmd(backgroundPoly, landPolyProperties);
 	else
 		output->AddDrawPolygonsCmd(backgroundPoly, seaPolyPoperties);
