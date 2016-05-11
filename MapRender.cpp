@@ -594,10 +594,11 @@ class FeaturesToLandPolys : public IFeatureConverterResult
 protected:
 	std::vector<ContourWithIds> coastlines;
 	CoastMap *coastMap; //Borrowed reference
-	int x, y, zoom;
+	int x, y, zoom, datax, datay, dataZoom;
 
 public:
-	FeaturesToLandPolys(int x, int y, int zoom) : x(x), y(y), zoom(zoom) 
+	FeaturesToLandPolys(int x, int y, int zoom, int datax, int datay, int dataZoom) : 
+		x(x), y(y), zoom(zoom), datax(datax), datay(datay), dataZoom(dataZoom)
 	{
 		coastMap = NULL;
 	};
@@ -662,22 +663,13 @@ bool FeaturesToLandPolys::TileHasLandCorners(int zoom, int x, int y)
 	bool tl = false, tr = false, bl = false, br = false;
 	if(this->coastMap!=NULL)
 	{
-		//Convert request to zoom level 12
-		int reqZoom = zoom;
-		int reqx = x;
-		int reqy = y;
+		if(zoom != this->coastMap->zoom)
+			throw runtime_error("coast corner map not defined at this zoom");
 
-		while(reqZoom > 12)
-		{
-			reqZoom --;
-			reqx /= 2;
-			reqy /= 2;
-		}
-
-		tl = this->coastMap->GetVal(reqx, reqy);
-		tr = this->coastMap->GetVal(reqx+1, reqy);
-		bl = this->coastMap->GetVal(reqx, reqy+1);
-		br = this->coastMap->GetVal(reqx+1, reqy+1);
+		tl = this->coastMap->GetVal(x, y);
+		tr = this->coastMap->GetVal(x+1, y);
+		bl = this->coastMap->GetVal(x, y+1);
+		br = this->coastMap->GetVal(x+1, y+1);
 	}
 	return tl && tr && bl && br;
 }
@@ -692,17 +684,35 @@ void FeaturesToLandPolys::Draw(class IDrawLib *output)
 	std::vector<std::vector<class PointInfo> > internalLoops;
 	std::vector<std::vector<class PointInfo> > reverseInternalLoops;
 
-	//left,bottom,right,top
-	double x1, x2, y1, y2;
-	output->GetDrawableExtents(x1,
-		y1,
-		x2,
-		y2);
-	std::vector<double> bbox;
-	bbox.push_back(x1);
-	bbox.push_back(y2);
-	bbox.push_back(x2);
-	bbox.push_back(y1);
+	//Get local tile drawing size
+	double lx1, lx2, ly1, ly2;
+	output->GetDrawableExtents(lx1,
+		ly1,
+		lx2,
+		ly2);
+	double width = lx2 - lx1;
+	double height = ly2 - ly1;
+
+	//This needs to be the data tile zoom level, not the local drawing surface
+	int reqZoom = this->dataZoom;
+	int reqx1 = this->datax;
+	int reqy1 = this->datay;
+	int reqx2 = this->datax+1;
+	int reqy2 = this->datay+1;
+	while(zoom > reqZoom)
+	{
+		reqZoom++;
+		reqx1 *= 2;
+		reqy1 *= 2;
+		reqx2 *= 2;
+		reqy2 *= 2;
+	}
+
+	std::vector<double> bbox; //left,bottom,right,top
+	bbox.push_back((reqx1 - x) * 640);
+	bbox.push_back((reqy2 - y) * 640);
+	bbox.push_back((reqx2 - x) * 640);
+	bbox.push_back((reqy1 - y) * 640);
 
 	CompletePolygonsInBbox(merged, 
 		bbox, 
@@ -712,18 +722,18 @@ void FeaturesToLandPolys::Draw(class IDrawLib *output)
 		internalLoops,
 		reverseInternalLoops, 0);
 
-	bool hasLandCorners = TileHasLandCorners(zoom, x, y);
+	bool hasLandCorners = this->TileHasLandCorners(this->dataZoom, this->datax, this->datay);
 
 	ShapeProperties landPolyProperties(241.0/255.0, 238.0/255.0, 232.0/255.0);
 	ShapeProperties seaPolyPoperties(181.0/255.0, 208.0/255.0, 208.0/255.0);
 
-	//Background sea
+	//Background sea or land
 	std::vector<Polygon> backgroundPoly;
 	Contour backgroundShape;
-	backgroundShape.push_back(Point(x1, y1));
-	backgroundShape.push_back(Point(x1, y2));
-	backgroundShape.push_back(Point(x2, y2));
-	backgroundShape.push_back(Point(x2, y1));
+	backgroundShape.push_back(Point(lx1, ly1));
+	backgroundShape.push_back(Point(lx1, ly2));
+	backgroundShape.push_back(Point(lx2, ly2));
+	backgroundShape.push_back(Point(lx2, ly1));
 	backgroundPoly.push_back(Polygon(backgroundShape, Contours()));
 	if (hasLandCorners && collectedLoops.size()==0)
 		output->AddDrawPolygonsCmd(backgroundPoly, landPolyProperties);
@@ -754,7 +764,8 @@ void FeaturesToLandPolys::SetCoastMap(CoastMap &coastMap)
 
 // **********************************************
 
-MapRender::MapRender(class IDrawLib *output, int x, int y, int zoom) : output(output), x(x), y(y), zoom(zoom)
+MapRender::MapRender(class IDrawLib *output, int x, int y, int zoom, int datax, int datay, int dataZoom) : 
+	output(output), x(x), y(y), zoom(zoom), datax(datax), datay(datay), dataZoom(dataZoom)
 {
 	coastMap = NULL;
 }
@@ -766,16 +777,17 @@ MapRender::~MapRender()
 
 void MapRender::Render(int zoom, class FeatureStore &featureStore, 
 	bool renderObjects, bool outputLabels,
-	class ITransform &transform, LabelsByImportance &organisedLabelsOut)
+	LabelsByImportance &organisedLabelsOut)
 {
 	class DrawTreeNode drawTree;
 	class LabelEngine labelEngine(this->output);
+	class SlippyTilesTransform transform(this->zoom, this->x, this->y);
 	
 	//Converts objects to draw tree and label info based on style definition
 	class FeatureConverter featureConverter(this->output);
 
 	class FeaturesToDrawCmds featuresToDrawCmds(&drawTree);
-	class FeaturesToLandPolys featuresToLandPolys(this->x, this->y, this->zoom);
+	class FeaturesToLandPolys featuresToLandPolys(this->x, this->y, this->zoom, this->datax, this->datay, this->dataZoom);
 	featuresToLandPolys.SetCoastMap(*this->coastMap);
 	if(renderObjects)
 	{
@@ -791,6 +803,7 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore,
 
 	if(renderObjects)
 	{
+		//Analyse coasts to form complete loops
 		featuresToLandPolys.Draw(this->output);
 
 		//Interate through draw tree to produce ordered draw commands

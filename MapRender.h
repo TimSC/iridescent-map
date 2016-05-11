@@ -29,15 +29,15 @@ public:
 	class IDrawLib *output;
 	class Style style;
 	CoastMap *coastMap; //Borrowed reference
-	int x, y, zoom;
+	int x, y, zoom, datax, datay, dataZoom;
 
-	MapRender(class IDrawLib *output, int x, int y, int zoom);
+	MapRender(class IDrawLib *output, int x, int y, int zoom, int datax, int datay, int dataZoom);
 	virtual ~MapRender();
 
 	///This (optionally) draws map shapes on to the drawing surface and (optionally) outputs an LabelsByImportance object.
 	void Render(int zoom, class FeatureStore &featureStore, 
 		bool renderObjects, bool outputLabels,
-		class ITransform &transform, LabelsByImportance &organisedLabelsOut);
+		LabelsByImportance &organisedLabelsOut);
 
 	///This renders labels on to a drawing surface for a tile based on its own labels and the labels of surrounding tiles.
 	void RenderLabels(const RenderLabelList &labelList,

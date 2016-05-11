@@ -493,11 +493,13 @@ void TraverseCorners(int prevEdgeIndex, double prevEdgePos,
 	if(prevEdgeIndex == -1) return;
 	int currentEdge = prevEdgeIndex;
 	double currentPos = prevEdgePos;
+	int count = 0;
 
 	if(direction == -1) while(currentEdge != edgeIndex || CheckTraverseDirection(currentEdge, currentPos, edgePos))
 	{
 		//Clockwise
 		currentEdge --;
+		count ++;
 		if(currentEdge < 0) currentEdge += 4;
 		if (verbose>=1)
 			cout << "Change to edge " << currentEdge << " from " << (currentEdge+1)%4 << endl;
@@ -505,31 +507,34 @@ void TraverseCorners(int prevEdgeIndex, double prevEdgePos,
 		{
 		case 0:
 			//Bottom left
-			currentPos = 640.0;
+			currentPos = bbox[1];
 			appendToOut.push_back(PointInfo(bbox[0], bbox[1], 0, 0));
 			break;
 		case 1:
 			//Bottom right
-			currentPos = 640.0;
+			currentPos = bbox[2];
 			appendToOut.push_back(PointInfo(bbox[2], bbox[1], 1, 0));
 			break;
 		case 2:
 			//Top right
-			currentPos = 0.0;
+			currentPos = bbox[3];
 			appendToOut.push_back(PointInfo(bbox[2], bbox[3], 2, 0));
 			break;
 		case 3:
 			//Top left
-			currentPos = 0.0;
+			currentPos = bbox[0];
 			appendToOut.push_back(PointInfo(bbox[0], bbox[3], 3, 0));
 			break;
 		}
+		if(count > 8)
+			throw runtime_error("Traverse corners not finishing correctly");
 	}
 
 	if(direction == 1) while(currentEdge != edgeIndex || !CheckTraverseDirection(currentEdge, currentPos, edgePos))
 	{
 		//Anti-clockwise
 		currentEdge ++;
+		count ++;
 		if(currentEdge >= 4) currentEdge -= 4;
 		if(verbose>=1)
 			cout << "Change to edge " << currentEdge << " from " << (currentEdge+1)%4 << endl;
@@ -537,25 +542,27 @@ void TraverseCorners(int prevEdgeIndex, double prevEdgePos,
 		{
 		case 0:
 			//Top left
-			currentPos = 0.0;
+			currentPos = bbox[3];
 			appendToOut.push_back(PointInfo(bbox[0], bbox[3], 3, 0));
 			break;
 		case 1:
 			//Bottom left
-			currentPos = 0.0;
+			currentPos = bbox[0];
 			appendToOut.push_back(PointInfo(bbox[0], bbox[1], 0, 0));
 			break;
 		case 2:
 			//Bottom right
-			currentPos = 640.0;
+			currentPos = bbox[1];
 			appendToOut.push_back(PointInfo(bbox[2], bbox[1], 1, 0));
 			break;
 		case 3:
 			//Top right
-			currentPos = 640.0;
+			currentPos = bbox[2];
 			appendToOut.push_back(PointInfo(bbox[2], bbox[3], 2, 0));
 			break;
 		}
+		if(count > 8)
+			throw runtime_error("Traverse corners not finishing correctly");
 	}
 
 }
