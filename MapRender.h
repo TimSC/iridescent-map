@@ -29,7 +29,8 @@ public:
 	class IDrawLib *output;
 	class Style style;
 	CoastMap *coastMap; //Borrowed reference
-	int x, y, zoom, datax, datay, dataZoom;
+	int x, y, zoom; //Coordinates of tile canvas to draw
+	int datax, datay, dataZoom; //Coordinates of source data being rendered
 
 	MapRender(class IDrawLib *output, int x, int y, int zoom, int datax, int datay, int dataZoom);
 	virtual ~MapRender();

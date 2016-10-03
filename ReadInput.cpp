@@ -3,7 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include "ReadGzip.h"
+#include "cppGzip/DecodeGzip.h"
 #include "ReadInput.h"
 
 using namespace std;

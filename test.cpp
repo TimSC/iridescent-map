@@ -28,14 +28,13 @@ int main()
 			if(x == 2035 && y == 1374) continue;
 			FeatureStore featureStore;
 			ReadInput(12, x, y, featureStore);
-			class SlippyTilesTransform slippyTilesTransform(12, x, y);
 
 			class DrawLibCairoPango drawlib(offScreenSurface);	
-			class MapRender mapRender(&drawlib, x, y, 12);
+			class MapRender mapRender(&drawlib, x, y, 12, x, y, 12);
 			mapRender.SetCoastMap(coastMap);
 			LabelsByImportance organisedLabels;
 			
-			mapRender.Render(12, featureStore, false, true, slippyTilesTransform, organisedLabels);
+			mapRender.Render(12, featureStore, false, true, organisedLabels);
 
 			OrganisedLabelsMap::iterator it = organisedLabelsMap.find(x);
 			if(it == organisedLabelsMap.end())
@@ -52,15 +51,12 @@ int main()
 	FeatureStore featureStore;
 	ReadInput(12, 2035, 1374, featureStore);
 
-	class SlippyTilesTransform slippyTilesTransform(12, 2035, 1374);
-	//class SlippyTilesTransform slippyTilesTransform(14, 8143, 5498);
-
 	class DrawLibCairoPango drawlib(surface);	
-	class MapRender mapRender(&drawlib, 2035, 1374, 12);
+	class MapRender mapRender(&drawlib, 2035, 1374, 12, 2035, 1374, 12);
 	mapRender.SetCoastMap(coastMap);
 	LabelsByImportance organisedLabels;
 	
-	mapRender.Render(12, featureStore, true, true, slippyTilesTransform, organisedLabels);
+	mapRender.Render(12, featureStore, true, true, organisedLabels);
 	organisedLabelsMap[2035][1374] = organisedLabels;
 
 	// ** Render labels **

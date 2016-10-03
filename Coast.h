@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <fstream>
 #include <list>
-#include "ReadGzip.h"
+#include "cppGzip/DecodeGzip.h"
 
 typedef std::list<std::pair<std::streampos, unsigned char> > CoastMapCacheList;
 const int COAST_MAP_CACHE_SIZE = 10;
