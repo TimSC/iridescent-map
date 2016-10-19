@@ -2,6 +2,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <stdexcept>
+#include <sstream>
 #include "TriTri2d.h"
 #include "drawlib/RdpSimplify.h"
 using namespace std;
@@ -303,7 +304,7 @@ PoiLabel& PoiLabel::operator=(const PoiLabel &arg)
 
 // *******************************************************
 
-LabelEngine::LabelEngine(class IDrawLib *output):
+LabelEngine::LabelEngine(class IDrawLib *output, const char *resourceFilePathIn):
 	output(output)
 {
 	outString = "";
@@ -313,6 +314,7 @@ LabelEngine::LabelEngine(class IDrawLib *output):
 	haloWidth=2.0;
 	placement = "point";
 	markerFile = "";
+	resourceFilePath = resourceFilePathIn;
 }
 
 LabelEngine::~LabelEngine()
@@ -486,7 +488,14 @@ void LabelEngine::LabelPoisToStyledLabel(const std::vector<class PoiLabel> &poiL
 			this->markerFile = "";
 			paramIt = label.styleAttributes.find("marker-file");
 			if(paramIt != label.styleAttributes.end())
-				UrlToLocalFile(paramIt->second, this->markerFile);
+			{
+				stringstream ss;
+				ss << resourceFilePath;
+				string tmp;
+				UrlToLocalFile(paramIt->second, tmp);
+				ss << tmp;
+				this->markerFile = ss.str();
+			}
 
 			//A shape is required for any drawing to happen
 			if(label.shape.size() == 0) continue;

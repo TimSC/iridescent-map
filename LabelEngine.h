@@ -96,12 +96,13 @@ protected:
 	std::string placement;
 	std::string markerFile;
 	ResourceSizeCache resourceSizeCache;
+	std::string resourceFilePath;
 
 	bool LayoutIconAndText(const class PoiLabel &label, bool enableIcon, bool enableText, LabelsByImportance &organisedLabelsOut, LabelDef &labelDefOut);
 	void GetResourceSizeCached(const std::string &filename, unsigned &widthOut, unsigned &heightOut);
 
 public:
-	LabelEngine(class IDrawLib *output);
+	LabelEngine(class IDrawLib *output, const char *resourceFilePathIn);
 	virtual ~LabelEngine();
 
 	void LabelPoisToStyledLabel(const std::vector<class PoiLabel> &poiLabels, LabelsByImportance &organisedLabelsOut);

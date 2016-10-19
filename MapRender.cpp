@@ -764,8 +764,10 @@ void FeaturesToLandPolys::SetCoastMap(CoastMap &coastMap)
 
 // **********************************************
 
-MapRender::MapRender(class IDrawLib *output, int x, int y, int zoom, int datax, int datay, int dataZoom) : 
-	output(output), x(x), y(y), zoom(zoom), datax(datax), datay(datay), dataZoom(dataZoom)
+MapRender::MapRender(class IDrawLib *output, int x, int y, 
+		int zoom, int datax, int datay, int dataZoom, const char *resourceFilePathIn) : 
+	output(output), x(x), y(y), zoom(zoom), datax(datax), datay(datay), dataZoom(dataZoom),
+	resourceFilePath(resourceFilePathIn)
 {
 	coastMap = NULL;
 }
@@ -780,7 +782,7 @@ void MapRender::Render(int zoom, class FeatureStore &featureStore,
 	LabelsByImportance &organisedLabelsOut)
 {
 	class DrawTreeNode drawTree;
-	class LabelEngine labelEngine(this->output);
+	class LabelEngine labelEngine(this->output, this->resourceFilePath.c_str());
 	class SlippyTilesTransform transform(this->zoom, this->x, this->y);
 	
 	//Converts objects to draw tree and label info based on style definition
@@ -832,7 +834,7 @@ void MapRender::RenderLabels(const RenderLabelList &labelList,
 {
 	if(labelList.size() != labelOffsets.size())
 		throw std::runtime_error("List lengths should match");
-	class LabelEngine labelEngine(this->output);
+	class LabelEngine labelEngine(this->output, this->resourceFilePath.c_str());
 
 	//Combine labels into a unified list
 	LabelsByImportance combinedLabels;

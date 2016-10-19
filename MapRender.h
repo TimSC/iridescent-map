@@ -5,6 +5,7 @@
 #include "Transform.h"
 #include "Style.h"
 #include "Coast.h"
+#include <string>
 
 class DrawTreeNode
 {
@@ -31,8 +32,9 @@ public:
 	CoastMap *coastMap; //Borrowed reference
 	int x, y, zoom; //Coordinates of tile canvas to draw
 	int datax, datay, dataZoom; //Coordinates of source data being rendered
+	std::string resourceFilePath;
 
-	MapRender(class IDrawLib *output, int x, int y, int zoom, int datax, int datay, int dataZoom);
+	MapRender(class IDrawLib *output, int x, int y, int zoom, int datax, int datay, int dataZoom, const char *resourceFilePathIn);
 	virtual ~MapRender();
 
 	///This (optionally) draws map shapes on to the drawing surface and (optionally) outputs an LabelsByImportance object.
