@@ -70,10 +70,12 @@ Show labels based on their relative importance and up to a clutter limit (rather
 */
 
 ///ReadInput reads a file, preprocesses it and outputs a FeatureStore representation of the data.
-void ReadInput(int zoom, int xtile, int ytile, FeatureStore &featureStore)
+void ReadInput(int zoom, const char *basePath, int xtile, int ytile, FeatureStore &featureStore)
 {
 	// ** Read input file and store in memory using node/way/relation **
 	stringstream finaStr;
+	finaStr << basePath << "/";
+	finaStr << zoom << "/";
 	finaStr << xtile << "/" << ytile << ".o5m.gz";
 	string fina = finaStr.str();
 	cout << fina << endl;

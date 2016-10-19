@@ -670,6 +670,7 @@ bool FeaturesToLandPolys::TileHasLandCorners(int zoom, int x, int y)
 		tr = this->coastMap->GetVal(x+1, y);
 		bl = this->coastMap->GetVal(x, y+1);
 		br = this->coastMap->GetVal(x+1, y+1);
+		cout << tl << tr << bl << br << endl;
 	}
 	return tl && tr && bl && br;
 }
@@ -735,6 +736,8 @@ void FeaturesToLandPolys::Draw(class IDrawLib *output)
 	backgroundShape.push_back(Point(lx2, ly2));
 	backgroundShape.push_back(Point(lx2, ly1));
 	backgroundPoly.push_back(Polygon(backgroundShape, Contours()));
+	cout << "hasLandCorners " << hasLandCorners << endl;
+	cout << "collectedLoops.size() " << collectedLoops.size() << endl;
 	if (hasLandCorners && collectedLoops.size()==0)
 		output->AddDrawPolygonsCmd(backgroundPoly, landPolyProperties);
 	else

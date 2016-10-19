@@ -19,7 +19,7 @@ CoastMap::~CoastMap()
 {
 }
 
-bool CoastMap::GetVal(int x, int y)
+bool CoastMap::GetVal(int y, int x)
 {
 	if (x >= this->width || y >= this->height)
 		throw runtime_error("Out of bounds");
