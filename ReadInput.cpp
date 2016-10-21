@@ -80,7 +80,9 @@ void ReadInput(int zoom, const char *basePath, int xtile, int ytile, FeatureStor
 	string fina = finaStr.str();
 	cout << fina << endl;
 	std::filebuf fi;
-	fi.open(fina.c_str(), std::ios::in);
+	std::filebuf* ret = fi.open(fina.c_str(), std::ios::in);
+	if(ret == NULL)
+		throw std::runtime_error("Error opening input file");
 
 	class DecodeGzip fiDec(fi);
 
@@ -89,6 +91,8 @@ void ReadInput(int zoom, const char *basePath, int xtile, int ytile, FeatureStor
 	class TagPreprocessor tagPreprocessor;
 	tagPreprocessor.output = &regrouper;	
 
+	if(fiDec.in_avail() == 0)
+		throw std::runtime_error("No data availabe from gzip decompression");
 	class O5mDecode dec(fiDec);
 	dec.output = &tagPreprocessor;
 	dec.DecodeHeader();
