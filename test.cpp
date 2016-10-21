@@ -27,10 +27,10 @@ int main()
 		{
 			if(x == 2035 && y == 1374) continue;
 			FeatureStore featureStore;
-			ReadInput(12, x, y, featureStore);
+			ReadInput(12, "../iridescent-map", x, y, featureStore);
 
 			class DrawLibCairoPango drawlib(offScreenSurface);	
-			class MapRender mapRender(&drawlib, x, y, 12, x, y, 12);
+			class MapRender mapRender(&drawlib, x, y, 12, x, y, 12, "../iridescent-map");
 			mapRender.SetCoastMap(coastMap);
 			LabelsByImportance organisedLabels;
 			
@@ -49,10 +49,10 @@ int main()
 
 	cairo_surface_t *surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 640, 640);
 	FeatureStore featureStore;
-	ReadInput(12, 2035, 1374, featureStore);
+	ReadInput(12, "../iridescent-map", 2035, 1374, featureStore);
 
 	class DrawLibCairoPango drawlib(surface);	
-	class MapRender mapRender(&drawlib, 2035, 1374, 12, 2035, 1374, 12);
+	class MapRender mapRender(&drawlib, 2035, 1374, 12, 2035, 1374, 12, "../iridescent-map");
 	mapRender.SetCoastMap(coastMap);
 	LabelsByImportance organisedLabels;
 	
