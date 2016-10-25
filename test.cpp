@@ -16,7 +16,7 @@ typedef map<int, map<int, LabelsByImportance> > OrganisedLabelsMap;
 int main()
 {
 
-	CoastMap coastMap("fosm-coast-earth201507161012.bin", 12);
+	CoastMap coastMap("fosm-coast-earth201507161012.bin");
 
 	// ** Collect labels from off screen tiles
 	OrganisedLabelsMap organisedLabelsMap;
@@ -27,10 +27,10 @@ int main()
 		{
 			if(x == 2035 && y == 1374) continue;
 			FeatureStore featureStore;
-			ReadInput(12, "../iridescent-map", x, y, featureStore);
+			ReadInput(12, "../iridescent-testdata", x, y, featureStore);
 
 			class DrawLibCairoPango drawlib(offScreenSurface);	
-			class MapRender mapRender(&drawlib, x, y, 12, x, y, 12, "../iridescent-map");
+			class MapRender mapRender(&drawlib, x, y, 12, x, y, 12, "../iridescent-testdata");
 			mapRender.SetCoastMap(coastMap);
 			LabelsByImportance organisedLabels;
 			

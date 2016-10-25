@@ -13,11 +13,10 @@ const int COAST_MAP_CACHE_SIZE = 10;
 class CoastMap
 {
 public:
-	CoastMap(const char* filename, int zoom);
+	CoastMap(const char* filename);
 	virtual ~CoastMap();
 	
-
-	bool GetVal(int x, int y);
+	bool GetVal(int y, int x);
 
 	uint32_t width, height;
 	int zoom;

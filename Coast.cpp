@@ -1,30 +1,31 @@
 #include "Coast.h"
+#include <cmath>
 #include <arpa/inet.h>
 #include <iostream>
 #include <stdexcept>
 using namespace std;
 
-CoastMap::CoastMap(const char* filename, int zoom) : coastBinFi(filename)
+CoastMap::CoastMap(const char* filename) : coastBinFi(filename)
 {
 	this->coastBinFi.seekg(0);
-	char sizeValsRaw[8];
-	this->coastBinFi.read(sizeValsRaw, 8);
+	char sizeValsRaw[12];
+	this->coastBinFi.read(sizeValsRaw, 12);
 
 	this->width = ntohl(*(uint32_t *)&sizeValsRaw[0]);
 	this->height = ntohl(*(uint32_t *)&sizeValsRaw[4]);
-	this->zoom = zoom;
+	this->zoom = ntohl(*(uint32_t *)&sizeValsRaw[8]);
 }
 
 CoastMap::~CoastMap()
 {
 }
 
-bool CoastMap::GetVal(int x, int y)
+bool CoastMap::GetVal(int y, int x)
 {
 	if (x >= this->width || y >= this->height)
 		throw runtime_error("Out of bounds");
 
-	streampos targetPos = 8 + (y * this->width / 8) + x / 8;
+	streampos targetPos = 12 + (y * ceil(this->width / 8.0)) + x / 8;
 
 	//Check cache
 	for(CoastMapCacheList::iterator it = cache.begin(); it != cache.end(); it++)
