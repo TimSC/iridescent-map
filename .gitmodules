@@ -7,3 +7,6 @@
 [submodule "cppGzip"]
 	path = cppGzip
 	url = https://github.com/TimSC/cppGzip.git
+[submodule "mbtiles-cpp"]
+	path = mbtiles-cpp
+	url = https://github.com/TimSC/mbtiles-cpp.git

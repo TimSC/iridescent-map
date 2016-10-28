@@ -4,13 +4,13 @@
 #include <iostream>
 #include <sstream>
 #include "cppGzip/DecodeGzip.h"
-#include "ReadInput.h"
+#include "ReadInputO5m.h"
 
 using namespace std;
 
 /** \mainpage
 
-The ReadInput() function loads a data source into a POI, line, area representation, which is a higher level preprocessed representation than the usual node, way, relation representation.
+The ReadInputO5m() function loads a data source into a POI, line, area representation, which is a higher level preprocessed representation than the usual node, way, relation representation.
 
 - DecodeGzip decodes the binary file into a o5m stream
 - O5mDecode decodes this stream and passes it to TagPreprocessor
@@ -26,6 +26,17 @@ The labels from surrounding tiles are then combined into a RenderLabelList and p
 
 \section oldplan Overall design concept
 
+                                     ReadInputO5m
+                                        |
+	                                  MapRender
+                                        |
+                                  IDrawLib based renderer
+                                        |
+                          |-------------|-----------|----------|--------|
+    Backends            Pango      (OpenGL ES)    Cairo     (WebGL)   (SVG)
+
+\subsection readinput Read Input O5m
+
                               Data source    Source definition
                                      |              |
                              Input selector --------|
@@ -34,12 +45,7 @@ The labels from surrounding tiles are then combined into a RenderLabelList and p
                                         |
                                      Regrouper
                                         |
-	                                  MapRender
-                                        |
-                                  IDrawLib based renderer
-                                        |
-                          |-------------|-----------|----------|--------|
-    Backends            Pango      (OpenGL ES)    Cairo     (WebGL)   (SVG)
+                                        ▼
 
 \subsection api Render API
 
@@ -70,7 +76,7 @@ Show labels based on their relative importance and up to a clutter limit (rather
 */
 
 ///ReadInput reads a file, preprocesses it and outputs a FeatureStore representation of the data.
-void ReadInput(int zoom, const char *basePath, int xtile, int ytile, FeatureStore &featureStore)
+void ReadInputO5m(int zoom, const char *basePath, int xtile, int ytile, FeatureStore &featureStore)
 {
 	// ** Read input file and store in memory using node/way/relation **
 	stringstream finaStr;
