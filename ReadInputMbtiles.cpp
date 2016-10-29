@@ -28,12 +28,14 @@ int ReadFileContents(const char *filename, int binaryMode, std::string &contentO
 	return 1;
 }
 
-class ExampleDataStore : public DecodeVectorTileResults
+class FeatureDataStore : public DecodeVectorTileResults
 {
 public:
-	ExampleDataStore() : DecodeVectorTileResults()
+	FeatureStore &featureStore;
+
+	FeatureDataStore(FeatureStore &featureStoreIn) : DecodeVectorTileResults(), featureStore(featureStoreIn)
 	{
-		cout << "Create custom data store..." << endl;
+
 	}
 
 	void Feature(int typeEnum, bool hasId, unsigned long long id, 
@@ -42,9 +44,8 @@ public:
 		std::vector<std::vector<Point2D> > &linesOut,
 		std::vector<Polygon2D> &polygonsOut)
 	{
-		//In real use, delete this function call and add your own functionality.
-		DecodeVectorTileResults::Feature(typeEnum, hasId, id, 
-			tagMap, pointsOut, linesOut, polygonsOut);
+		//DecodeVectorTileResults::Feature(typeEnum, hasId, id, 
+		//	tagMap, pointsOut, linesOut, polygonsOut);
 	}
 };
 
@@ -75,7 +76,7 @@ void ReadInputMbtiles(int zoom, const char *basePath, int xtile, int ytile, Feat
 	}
 
 	//Decode vector data
-	class ExampleDataStore results;
+	class FeatureDataStore results(featureStore);
 	class DecodeVectorTile vectorDec(results);
 	vectorDec.DecodeTileData(tileData, zoom, xtile, ytile);
 
