@@ -66,6 +66,7 @@ FeatureArea& FeatureArea::operator=(const FeatureArea &arg)
 	tags = arg.tags;
 	outerShapes = arg.outerShapes;
 	innerShapes = arg.innerShapes;
+	return *this;
 }
 
 FeatureLine::FeatureLine()
@@ -93,6 +94,7 @@ FeatureLine& FeatureLine::operator=(const FeatureLine &arg)
 {
 	tags = arg.tags;
 	shape = arg.shape;
+	return *this;
 }
 
 FeaturePoi::FeaturePoi()
@@ -122,6 +124,7 @@ FeaturePoi& FeaturePoi::operator=(const FeaturePoi &arg)
 	nid = arg.nid;
 	lat = arg.lat;
 	lon = arg.lon;
+	return *this;
 }
 
 // ********************************
@@ -146,6 +149,7 @@ FeatureStore& FeatureStore::operator=(const FeatureStore &arg)
 	areas = arg.areas;
 	lines = arg.lines;
 	pois = arg.pois;
+	return *this;
 }
 
 void FeatureStore::FoundArea(const TagMap &tags, 

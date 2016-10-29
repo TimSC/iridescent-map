@@ -21,7 +21,7 @@ public:
 	virtual ~DrawTreeNode();
 
 	void WriteDrawCommands(class IDrawLib *output);
-	class DrawTreeNode *GetLayer(LayerDef &layerDef, int depth = 0);
+	class DrawTreeNode *GetLayer(LayerDef &layerDef, unsigned int depth = 0);
 };
 
 class MapRender

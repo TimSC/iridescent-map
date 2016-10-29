@@ -16,7 +16,7 @@ public:
 	CoastMap(const char* filename);
 	virtual ~CoastMap();
 	
-	bool GetVal(int y, int x);
+	bool GetVal(unsigned int y, unsigned int x);
 
 	uint32_t width, height;
 	int zoom;

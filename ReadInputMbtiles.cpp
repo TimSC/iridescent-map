@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include "FeatureStore.h"
 
 using namespace std;
 

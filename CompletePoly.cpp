@@ -238,8 +238,6 @@ void AnalyseContour(const ContourWithIds &contour,
 	double eps,
 	std::vector<std::vector<class PointInfo> > &pathsWithinBboxOut)
 {
-	unsigned int numInside = 0;
-	unsigned int numOutside = 0;
 	if(contour.size() < 2) return;
 
 	const PointWithId *prevPt = &contour[0];

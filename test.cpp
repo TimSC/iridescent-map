@@ -4,6 +4,7 @@
 #include "LabelEngine.h"
 #include "Regrouper.h"
 #include "ReadInputO5m.h"
+#include "ReadInputMbtiles.h"
 #include "Transform.h"
 #include "drawlib/drawlibcairo.h"
 #include "MapRender.h"

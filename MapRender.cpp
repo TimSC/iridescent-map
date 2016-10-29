@@ -167,7 +167,7 @@ void DrawTreeNode::WriteDrawCommands(class IDrawLib *output)
 	}
 }
 
-class DrawTreeNode *DrawTreeNode::GetLayer(LayerDef &layerDef, int depth)
+class DrawTreeNode *DrawTreeNode::GetLayer(LayerDef &layerDef, unsigned int depth)
 {
 	if(layerDef.size() <= depth) return this;
 	
@@ -492,7 +492,7 @@ void FeaturesToLabelEngine::OutArea(StyleDef &styleDef, const std::vector<Polygo
 	for(size_t j=0; j< styleDef.size(); j++)
 	{
 		StyleAndLayerDef &styleAndLayerDef = styleDef[j];
-		LayerDef &layerDef = styleAndLayerDef.first;
+		//LayerDef &layerDef = styleAndLayerDef.first;
 		StyleAttributes &styleAttributes = styleAndLayerDef.second;
 
 		string textName = "";
@@ -528,7 +528,7 @@ void FeaturesToLabelEngine::OutLine(StyleDef &styleDef, const ContoursWithIds &l
 	for(size_t j=0; j< styleDef.size(); j++)
 	{
 		StyleAndLayerDef &styleAndLayerDef = styleDef[j];
-		LayerDef &layerDef = styleAndLayerDef.first;
+		//LayerDef &layerDef = styleAndLayerDef.first;
 		StyleAttributes &styleAttributes = styleAndLayerDef.second;
 
 		string textName = "";
@@ -568,7 +568,7 @@ void FeaturesToLabelEngine::OutPoi(StyleDef &styleDef, int64_t nid, double px, d
 	for(size_t j=0; j< styleDef.size(); j++)
 	{
 		StyleAndLayerDef &styleAndLayerDef = styleDef[j];
-		LayerDef &layerDef = styleAndLayerDef.first;
+		//LayerDef &layerDef = styleAndLayerDef.first;
 		StyleAttributes &styleAttributes = styleAndLayerDef.second;
 
 		string textName = "";
@@ -690,8 +690,8 @@ void FeaturesToLandPolys::Draw(class IDrawLib *output)
 		ly1,
 		lx2,
 		ly2);
-	double width = lx2 - lx1;
-	double height = ly2 - ly1;
+	//double width = lx2 - lx1;
+	//double height = ly2 - ly1;
 
 	//This needs to be the data tile zoom level, not the local drawing surface
 	int reqZoom = this->dataZoom;

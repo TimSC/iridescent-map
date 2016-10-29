@@ -51,6 +51,7 @@ LabelDef& LabelDef::operator=(const LabelDef &arg)
 	labels = arg.labels;
 	twistedLabels = arg.twistedLabels;
 	icons = arg.icons;
+	return *this;
 }
 
 void LabelDef::Translate(double tx, double ty)
@@ -263,6 +264,7 @@ LabelIcon& LabelIcon::operator=(const LabelIcon &arg)
 	x=arg.x;
 	y=arg.y;
 	iconFile=arg.iconFile;
+	return *this;
 }
 
 void LabelIcon::Translate(double tx, double ty)
@@ -300,6 +302,7 @@ PoiLabel& PoiLabel::operator=(const PoiLabel &arg)
 	textName = arg.textName;
 	tags = arg.tags;
 	styleAttributes = arg.styleAttributes;
+	return *this;
 }
 
 // *******************************************************
