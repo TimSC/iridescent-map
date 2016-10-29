@@ -7,6 +7,9 @@ using namespace std;
 
 CoastMap::CoastMap(const char* filename) : coastBinFi(filename)
 {
+	if(this->coastBinFi.fail())
+		throw runtime_error("Failed to open coast data file");
+
 	this->coastBinFi.seekg(0);
 	char sizeValsRaw[12];
 	this->coastBinFi.read(sizeValsRaw, 12);

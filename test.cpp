@@ -17,7 +17,7 @@ typedef map<int, map<int, LabelsByImportance> > OrganisedLabelsMap;
 int main()
 {
 
-	CoastMap coastMap("fosm-coast-earth201507161012.bin");
+	CoastMap coastMap("../iridescent-testdata/map.bin");
 
 	// ** Collect labels from off screen tiles
 	OrganisedLabelsMap organisedLabelsMap;
