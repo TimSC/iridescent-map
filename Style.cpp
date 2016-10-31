@@ -145,6 +145,30 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 		return 1;
 	}
 
+	it = tags.find("class");
+	if(it != tags.end() && featuretype == Line)
+	{
+		if(it->second == "street")
+		{
+			StyleAttributes style, style2;
+			LayerDef layerDef, layerDef2;
+			style["line-color"] = "#cdcdcc";
+			style["line-width"] = "4";
+
+			layerDef.push_back(1);
+			layerDef.push_back(0);
+
+			style2["line-color"] = "#fefefe";
+			style2["line-width"] = "2";
+			layerDef2.push_back(1);
+			layerDef2.push_back(6);
+
+			styleDefOut.push_back(StyleAndLayerDef(layerDef, style));
+			styleDefOut.push_back(StyleAndLayerDef(layerDef2, style2));
+			return 1;
+		}
+	}
+
 	it = tags.find("natural");
 	if(it != tags.end() && it->second == "water" && featuretype == Area)
 	{
@@ -187,6 +211,20 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 	}
 
 	it = tags.find("building");
+	if(it != tags.end() && featuretype == Area)
+	{
+		StyleAttributes style;
+		style["polygon-fill"] = "#beacac";
+
+		LayerDef layerDef;
+		layerDef.push_back(1);
+		layerDef.push_back(3);
+
+		styleDefOut.push_back(StyleAndLayerDef(layerDef, style));
+		return 1;
+	}
+
+	it = tags.find("class");
 	if(it != tags.end() && featuretype == Area)
 	{
 		StyleAttributes style;
@@ -252,7 +290,6 @@ int Style::GetStyle(int zoom, const TagMap &tags, FeatureType featuretype, Style
 			styleDefOut.push_back(StyleAndLayerDef(layerDef, style));
 			return 1;
 		}
-
 	}
 
 	return 0;

@@ -2,6 +2,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <cmath>
 #include "ReadInputMbtiles.h"
 #include "cppGzip/DecodeGzip.h"
 
@@ -55,10 +56,19 @@ void FeatureDataStore::Feature(int typeEnum, bool hasId, unsigned long long id,
 {
 	string typeStr = FeatureTypeToStr(typeEnum);
 
+	/*cout << typeEnum << "," << FeatureTypeToStr(typeEnum);
+	if(hasId)
+		cout << ",id=" << id;
+	cout << endl;
+	for(map<string, string>::const_iterator it = tagMap.begin(); it != tagMap.end(); it++)
+	{
+		cout << it->first << "=" << it->second << endl;
+	}*/
+
 	if(typeStr == "Point")
 		for(size_t i =0; i < points.size(); i++)
 		{
-			FeaturePoi poi(tagMap, 0, points[i].first, points[i].second);
+			FeaturePoi poi(tagMap, 0, points[i].second, points[i].first);
 			this->featureStore.pois.push_back(poi);
 		}
 	if(typeStr == "LineString")
@@ -68,7 +78,7 @@ void FeatureDataStore::Feature(int typeEnum, bool hasId, unsigned long long id,
 			vector<Point2D> &linePts = lines[i];
 			for(size_t j =0; j < linePts.size(); j++)
 			{
-				IdLatLon pt(linePts[j].first, linePts[j].second, 0);
+				IdLatLon pt(linePts[j].second, linePts[j].first, 0);
 				line.push_back(pt);
 			}
 
@@ -86,7 +96,7 @@ void FeatureDataStore::Feature(int typeEnum, bool hasId, unsigned long long id,
 			LineLoop2D &linePts = polygon.first; //Outer shape
 			for(size_t j =0; j < linePts.size(); j++)
 			{
-				IdLatLon pt(linePts[j].first, linePts[j].second, 0);
+				IdLatLon pt(linePts[j].second, linePts[j].first, 0);
 				outerLine.push_back(pt);
 			}
 			outerShapes.push_back(outerLine);
@@ -100,7 +110,7 @@ void FeatureDataStore::Feature(int typeEnum, bool hasId, unsigned long long id,
 					LineLoop2D &linePts2 = polygon.second[k];
 					for(size_t j =0; j < linePts2.size(); j++)
 					{
-						IdLatLon pt(linePts2[j].first, linePts2[j].second, 0);
+						IdLatLon pt(linePts2[j].second, linePts2[j].first, 0);
 						innerLine.push_back(pt);
 					}
 					innerShapes.push_back(innerLine);
@@ -138,11 +148,18 @@ void ReadInputMbtiles(int zoom, const char *basePath, int xtile, int ytile, Feat
 		tileData.append(tmp, bytes);
 	}
 
+	featureStore.Clear();
+
 	//Decode vector data
+	long unsigned int numTiles = pow(2,zoom);
+	int invYtile = numTiles-ytile-1;
+
 	class FeatureDataStore results(featureStore);
 	class DecodeVectorTile vectorDec(results);
-	vectorDec.DecodeTileData(tileData, zoom, xtile, ytile);
+	vectorDec.DecodeTileData(tileData, zoom, xtile, invYtile);
 
-	featureStore.Clear();
+	cout << "areas " << featureStore.areas.size();
+	cout << ", lines " << featureStore.lines.size();
+	cout << ", pois " << featureStore.pois.size() << endl;
 }
 
